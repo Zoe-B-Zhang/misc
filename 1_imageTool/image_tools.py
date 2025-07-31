@@ -134,8 +134,8 @@ def add_watermark_to_directory(input_dir, output_dir, watermark_text=None, water
         else:
             print(f"❌ No watermark method specified for {filename}")
 
-# === Resize image while maintaining aspect ratio ===
-def resize_image(im, max_width, max_height):
+# === Resize logo image while maintaining aspect ratio ===
+def resize_logo_image(im, max_width, max_height):
     """
     Resize image to fit within (max_width, max_height) while keeping aspect ratio.
     Modifies image in place.
@@ -165,7 +165,7 @@ def resize_and_watermark_directory(
             try:
                 with Image.open(input_path).convert("RGBA") as im:
                     # Step 1: Resize
-                    resized = resize_image(im, max_width, max_height)
+                    resized = resize_logo_image(im, max_width, max_height)
 
                     # Step 2: Apply watermark
                     if watermark_text:

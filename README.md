@@ -18,6 +18,7 @@ A lightweight desktop application for batch processing images — perfect for pr
 ## 🖥️ How to Use
 
 1. **Launch** the app (`image_batch_gui.exe`, you can download from build folder directly)
+  pyinstaller --onefile --noconsole --icon=bird.ico --add-data "assets;assets" image_batch_gui.py
 2. **Select**:
    - Input image folder
    - Output folder
