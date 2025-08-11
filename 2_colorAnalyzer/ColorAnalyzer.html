@@ -357,41 +357,216 @@
       });
     }
 
-    function getDominantColors(img, k, useMedianCut) {
-        const canvas = document.createElement('canvas');
-        const MAX_DIM = 100;
-        let width = img.width, height = img.height;
-        if (width > height) { if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; } } 
-        else { if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+    // ===== Utilities =====
+function clamp01(x) { return Math.min(1, Math.max(0, x)); }
+function srgbToLinear(u) { u /= 255; return u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); }
+function linearToSrgb(u) { 
+  return Math.round(255 * (u <= 0.0031308 ? 12.92 * u : 1.055 * Math.pow(u, 1/2.4) - 0.055));
+}
 
-        const rawPixelData = ctx.getImageData(0, 0, width, height).data;
-        const pixels = [];
-        for (let i = 0; i < rawPixelData.length; i += 4) {
-            if (rawPixelData[i + 3] > 128 && !(rawPixelData[i] > 250 && rawPixelData[i + 1] > 250 && rawPixelData[i + 2] > 250)) {
-                pixels.push([rawPixelData[i], rawPixelData[i + 1], rawPixelData[i + 2]]);
-            }
-        }
+function rgbToXyz([r, g, b]) {
+  // sRGB D65
+  const R = srgbToLinear(r), G = srgbToLinear(g), B = srgbToLinear(b);
+  const x = 0.4124564*R + 0.3575761*G + 0.1804375*B;
+  const y = 0.2126729*R + 0.7151522*G + 0.0721750*B;
+  const z = 0.0193339*R + 0.1191920*G + 0.9503041*B;
+  return [x, y, z];
+}
 
-        if (pixels.length === 0) return [];
-        let colorMap;
-        if (useMedianCut) {
-            colorMap = medianCut(pixels, k);
-        } else {
-            const result = kmeans(pixels, Math.min(k, pixels.length));
-            colorMap = result.centroids.map((centroid, i) => {
-                const proportion = result.assignments.filter(a => a === i).length / pixels.length;
-                return { rgb: centroid.map(Math.round), proportion: proportion };
-            });
-        }
-        
-        return colorMap.map(c => ({
-            ...c,
-            hex: rgbToHex(c.rgb[0], c.rgb[1], c.rgb[2]),
-        })).sort((a, b) => b.proportion - a.proportion);
+function xyzToRgb([x, y, z]) {
+  const R =  3.2404542*x - 1.5371385*y - 0.4985314*z;
+  const G = -0.9692660*x + 1.8760108*y + 0.0415560*z;
+  const B =  0.0556434*x - 0.2040259*y + 1.0572252*z;
+  return [
+    linearToSrgb(clamp01(R)),
+    linearToSrgb(clamp01(G)),
+    linearToSrgb(clamp01(B)),
+  ];
+}
+
+function fLab(t){ const d = 6/29; return t > d**3 ? Math.cbrt(t) : (t/(3*d*d) + 4/29); }
+function finvLab(t){ const d = 6/29; return t > d ? t*t*t : 3*d*d*(t - 4/29); }
+
+function rgbToLab(rgb) {
+  const [x, y, z] = rgbToXyz(rgb);
+  // D65 reference white
+  const Xn = 0.95047, Yn = 1.00000, Zn = 1.08883;
+  const fx = fLab(x / Xn), fy = fLab(y / Yn), fz = fLab(z / Zn);
+  const L = 116*fy - 16;
+  const a = 500*(fx - fy);
+  const b = 200*(fy - fz);
+  return [L, a, b];
+}
+
+function labToRgb([L, a, b]) {
+  const fy = (L + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  // D65 reference white
+  const Xn = 0.95047, Yn = 1.00000, Zn = 1.08883;
+  const x = Xn * finvLab(fx), y = Yn * finvLab(fy), z = Zn * finvLab(fz);
+  return xyzToRgb([x, y, z]);
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+// ===== Improved Median-Cut (variance-based, perceptual) =====
+function medianCutImproved(pixelsRGB, k, { useLab = true } = {}) {
+  const spacePixels = useLab ? pixelsRGB.map(rgbToLab) : pixelsRGB; // L*a*b* or RGB
+  const dim = 3;
+
+  const makeBox = (idxs) => ({ idxs, // indices into spacePixels
+    stats: null
+  });
+
+  function computeStats(box) {
+    const n = box.idxs.length;
+    const mean = [0,0,0];
+    for (const i of box.idxs) {
+      const p = spacePixels[i];
+      mean[0]+=p[0]; mean[1]+=p[1]; mean[2]+=p[2];
     }
+    mean[0]/=n; mean[1]/=n; mean[2]/=n;
+    const varr = [0,0,0];
+    for (const i of box.idxs) {
+      const p = spacePixels[i];
+      varr[0]+= (p[0]-mean[0])**2;
+      varr[1]+= (p[1]-mean[1])**2;
+      varr[2]+= (p[2]-mean[2])**2;
+    }
+    varr[0]/=n; varr[1]/=n; varr[2]/=n;
+    const totalVar = varr[0]+varr[1]+varr[2];
+    box.stats = { mean, varr, totalVar, n };
+    return box.stats;
+  }
+
+  // priority: larger n * totalVar first
+  function boxScore(box){ const s = box.stats || computeStats(box); return s.n * s.totalVar; }
+
+  const boxes = [ makeBox([...spacePixels.keys()]) ];
+  computeStats(boxes[0]);
+
+  while (boxes.length < k) {
+    // pick the most "splittable" box
+    boxes.sort((a,b)=>boxScore(b)-boxScore(a));
+    const box = boxes[0];
+    if ((box.stats?.n ?? 0) <= 1) break;
+
+    // choose split dim by largest variance
+    const v = box.stats.varr;
+    let splitDim = 0; if (v[1] > v[splitDim]) splitDim = 1; if (v[2] > v[splitDim]) splitDim = 2;
+
+    // sort indices along split dim
+    box.idxs.sort((i,j)=> spacePixels[i][splitDim] - spacePixels[j][splitDim]);
+
+    // split at median (by index). If ties, still splits population fairly.
+    const mid = Math.floor(box.idxs.length / 2);
+    const leftIdxs = box.idxs.slice(0, mid);
+    const rightIdxs = box.idxs.slice(mid);
+
+    if (leftIdxs.length === 0 || rightIdxs.length === 0) break; // cannot split further
+
+    // replace current box with two children
+    boxes.shift();
+    const b1 = makeBox(leftIdxs), b2 = makeBox(rightIdxs);
+    computeStats(b1); computeStats(b2);
+    boxes.push(b1, b2);
+  }
+
+  // representative color: mean in perceptual space -> back to sRGB
+  const results = boxes.map(box => {
+    const m = box.stats?.mean ?? computeStats(box).mean;
+    const rgb = useLab ? labToRgb(m).map(Math.round) : m.map(Math.round);
+    return {
+      rgb,
+      proportion: (box.stats?.n ?? box.idxs.length) / spacePixels.length
+    };
+  });
+
+  return results;
+}
+
+function getDominantColors(img, k, options = {}) {
+  const {
+    maxDim = 150,
+    useLab = true,
+    disableSmoothing = true,
+    alphaThreshold = 32,
+  } = options;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Resize with optional smoothing
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * maxDim / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round(width * maxDim / height);
+        height = maxDim;
+      }
+      canvas.width = width;
+      canvas.height = height;
+
+      if (disableSmoothing) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingQuality = 'low';
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Extract and filter pixels
+      const raw = ctx.getImageData(0, 0, width, height).data;
+      const pixels = [];
+      for (let i = 0; i < raw.length; i += 4) {
+        const alpha = raw[i + 3];
+        if (alpha < alphaThreshold) continue;
+        pixels.push([raw[i], raw[i + 1], raw[i + 2]]);
+      }
+
+      if (pixels.length === 0) return [];
+
+      // Convert to perceptual space
+      const spacePixels = useLab ? pixels.map(rgbToLab) : pixels;
+
+      // K-Means clustering (simple version or existing)
+      const result = kmeans(spacePixels, Math.min(k, spacePixels.length)); // you can plug in your existing kmeans
+
+      // Post-process clusters
+      const output = result.centroids.map((centroid, i) => {
+        const assignedIdxs = result.assignments.map((a, idx) => a === i ? idx : -1).filter(idx => idx !== -1);
+        const clusterRGB = assignedIdxs.map(idx => pixels[idx]);
+        const n = clusterRGB.length;
+
+        // Compute mean RGB and Lab
+        let R=0, G=0, B=0, L=0, a=0, b=0;
+        for (const rgb of clusterRGB) {
+          R += rgb[0]; G += rgb[1]; B += rgb[2];
+          const [l_, a_, b_] = rgbToLab(rgb);
+          L += l_; a += a_; b += b_;
+        }
+        R /= n; G /= n; B /= n; L /= n; a /= n; b /= n;
+
+        const hue = Math.atan2(b, a) * 180 / Math.PI;
+        const saturation = Math.sqrt(a*a + b*b);
+        const isGray = saturation < 8;
+
+        return {
+          rgb: [Math.round(R), Math.round(G), Math.round(B)],
+          hex: rgbToHex(Math.round(R), Math.round(G), Math.round(B)),
+          proportion: n / pixels.length,
+          lightness: L,
+          saturation,
+          hue: (hue + 360) % 360,
+          grayness: isGray ? 'high' : 'low',
+        };
+      });
+
+      return output.sort((a, b) => b.proportion - a.proportion);
+    }
+
 
     // --- Color Quantization Algorithms ---
     function medianCut(pixels, k) {
@@ -428,7 +603,220 @@
             };
         });
     }
-    
+    // ===== Utility: seeded RNG and hashing =====
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function() {
+        t += 0x6D2B79F5;
+        let r = Math.imul(t ^ t >>> 15, 1 | t);
+        r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+        return ((r ^ r >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    // FNV-1a hash on a subset of data to derive deterministic seed
+    function hashData(data, sampleStep = 17) {
+      let h = 0x811C9DC5;
+      const n = data.length;
+      for (let i = 0; i < n; i += Math.max(1, Math.floor(n / sampleStep))) {
+        const p = data[i];
+        h ^= (p[0] * 31 + p[1] * 17 + p[2]) & 0xFF;
+        h = (h * 0x01000193) >>> 0;
+      }
+      return h >>> 0;
+    }
+
+    // ===== Core math =====
+    function sqDist(p, q) { // squared Euclidean
+      const dx = p[0]-q[0], dy = p[1]-q[1], dz = p[2]-q[2];
+      return dx*dx + dy*dy + dz*dz;
+    }
+    function weightedMean(points, weights) {
+      let sx=0, sy=0, sz=0, sw=0;
+      for (let i=0;i<points.length;i++){
+        const w = weights ? weights[i] : 1;
+        sx += points[i][0]*w; sy += points[i][1]*w; sz += points[i][2]*w; sw += w;
+      }
+      return sw>0 ? [sx/sw, sy/sw, sz/sw] : [0,0,0];
+    }
+    function clusterWeightedMean(idxList, data, weights) {
+      let sx=0, sy=0, sz=0, sw=0;
+      for (const idx of idxList) {
+        const p = data[idx];
+        const w = weights ? weights[idx] : 1;
+        sx += p[0]*w; sy += p[1]*w; sz += p[2]*w; sw += w;
+      }
+      return sw>0 ? [sx/sw, sy/sw, sz/sw] : null;
+    }
+    function computeInertia(assignments, centroids, data, weights) {
+      let sum = 0;
+      for (let i=0;i<data.length;i++){
+        const c = centroids[assignments[i]];
+        const w = weights ? weights[i] : 1;
+        sum += w * sqDist(data[i], c);
+      }
+      return sum;
+    }
+
+    // ===== Initializations =====
+    function kmeansppInitSeeded(data, k, rng, weights) {
+      const n = data.length;
+      const centroids = [];
+      // pick first centroid: weighted medoid near overall weighted mean
+      const globalMean = weightedMean(data, weights && data.map((_,i)=>weights[i]));
+      let firstIdx = 0, bestD = Infinity;
+      for (let i=0;i<n;i++){ const d = sqDist(data[i], globalMean); if (d < bestD) { bestD = d; firstIdx = i; } }
+      centroids.push(data[firstIdx]);
+
+      const distances = new Float64Array(n).fill(Infinity);
+      for (let c = 1; c < k; c++) {
+        // update distances to nearest centroid
+        for (let i=0;i<n;i++){
+          const d = sqDist(data[i], centroids[centroids.length-1]);
+          if (d < distances[i]) distances[i] = d;
+        }
+        // choose next centroid proportional to d^2 (k-means++)
+        let total = 0;
+        for (let i=0;i<n;i++){
+          const w = weights ? weights[i] : 1;
+          total += distances[i] * w;
+        }
+        if (total === 0) { // all points identical
+          centroids.push(data[Math.floor(rng()*n)]);
+          continue;
+        }
+        let r = rng() * total, acc = 0, chosen = 0;
+        for (let i=0;i<n;i++){
+          const w = weights ? weights[i] : 1;
+          acc += distances[i]*w;
+          if (acc >= r) { chosen = i; break; }
+        }
+        centroids.push(data[chosen]);
+      }
+      return centroids;
+    }
+
+    function farthestFirstInit(data, k, weights) {
+      const n = data.length;
+      const centroids = [];
+      // first: medoid near global mean
+      const globalMean = weightedMean(data, weights && data.map((_,i)=>weights[i]));
+      let firstIdx = 0, bestD = Infinity;
+      for (let i=0;i<n;i++){ const d = sqDist(data[i], globalMean); if (d < bestD) { bestD = d; firstIdx = i; } }
+      centroids.push(data[firstIdx]);
+
+      const minDist = new Float64Array(n).fill(Infinity);
+      for (let c = 1; c < k; c++) {
+        for (let i=0;i<n;i++){
+          const d = sqDist(data[i], centroids[centroids.length-1]);
+          if (d < minDist[i]) minDist[i] = d;
+        }
+        // choose farthest point deterministically
+        let farIdx = 0, farVal = -1;
+        for (let i=0;i<n;i++){
+          const val = minDist[i];
+          if (val > farVal) { farVal = val; farIdx = i; }
+        }
+        centroids.push(data[farIdx]);
+      }
+      return centroids;
+    }
+
+    // ===== Main k-means =====
+    function kmeans(data, k, opts = {}) {
+      if (k === 0 || data.length < k) return { centroids: [], assignments: [] };
+      const {
+        maxIter = 100,
+        tol = 1e-4,           // relative inertia improvement threshold
+        nInit = 1,            // multiple restarts for quality; keep seed deterministic for稳定性
+        seed = null,          // if null, derive from data hash
+        init = 'kmeans++',    // 'kmeans++' | 'farthest'
+        weights = null,       // optional weights per-point
+        sortStrategy = 'proportion' // 'proportion' | 'hue' | 'lightness' (若有这些属性)
+      } = opts;
+
+      const baseSeed = seed != null ? seed >>> 0 : hashData(data);
+      let best = null, bestInertia = Infinity, bestAssignments = null, bestCentroids = null;
+
+      for (let run = 0; run < Math.max(1, nInit); run++) {
+        const rng = mulberry32((baseSeed + run) >>> 0);
+        let centroids = (init === 'farthest')
+          ? farthestFirstInit(data, k, weights)
+          : kmeansppInitSeeded(data, k, rng, weights);
+
+        let assignments = new Array(data.length).fill(0);
+        let inertiaPrev = Infinity;
+
+        for (let iter = 0; iter < maxIter; iter++) {
+          // Assignment step
+          for (let i=0;i<data.length;i++){
+            let minD = Infinity, minIdx = 0;
+            for (let c=0;c<centroids.length;c++){
+              const d = sqDist(data[i], centroids[c]);
+              if (d < minD) { minD = d; minIdx = c; }
+            }
+            assignments[i] = minIdx;
+          }
+
+          // Update step
+          const clusters = Array.from({length:k}, () => []);
+          for (let i=0;i<data.length;i++) clusters[assignments[i]].push(i);
+
+          // Handle empty clusters: reassign to worst-error point
+          for (let c=0;c<k;c++){
+            if (clusters[c].length === 0) {
+              // find point with largest distance to its centroid
+              let worstIdx = 0, worstD = -1;
+              for (let i=0;i<data.length;i++){
+                const d = sqDist(data[i], centroids[assignments[i]]);
+                if (d > worstD) { worstD = d; worstIdx = i; }
+              }
+              clusters[c] = [worstIdx];
+              assignments[worstIdx] = c;
+            }
+          }
+
+          // Recompute centroids
+          let moved = 0;
+          for (let c=0;c<k;c++){
+            const mean = clusterWeightedMean(clusters[c], data, weights);
+            if (mean) {
+              moved += sqDist(mean, centroids[c]);
+              centroids[c] = mean;
+            }
+          }
+
+          // Check convergence by inertia improvement
+          const inertia = computeInertia(assignments, centroids, data, weights);
+          const relGain = (inertiaPrev - inertia) / Math.max(1, inertiaPrev);
+          inertiaPrev = inertia;
+          if (relGain >= 0 && relGain < tol) break;
+          // Optional safeguard: if centroids barely move
+          if (moved < 1e-10) break;
+        } // end iterations
+
+        const inertiaFinal = computeInertia(assignments, centroids, data, weights);
+        if (inertiaFinal < bestInertia) {
+          bestInertia = inertiaFinal;
+          bestAssignments = assignments;
+          bestCentroids = centroids;
+          best = { centroids: centroids.map(c => c.slice()), assignments: assignments.slice(), inertia: inertiaFinal };
+        }
+      }
+
+      // Stable ordering: sort by cluster size (proportion) descending
+      const counts = new Array(k).fill(0);
+      for (const a of bestAssignments) counts[a]++;
+      const order = [...Array(k).keys()].sort((i,j)=> counts[j]-counts[i]);
+      const remap = new Array(k);
+      order.forEach((cid, newIdx)=> remap[cid] = newIdx);
+
+      const centroidsSorted = order.map(idx => bestCentroids[idx]);
+      const assignmentsRemapped = bestAssignments.map(a => remap[a]);
+
+      return { centroids: centroidsSorted, assignments: assignmentsRemapped };
+    }
+
     function kmeans(data, k) {
       if (k === 0 || data.length < k) return { centroids: [], assignments: [] };
       let centroids = kmeansppInit(data, k);
