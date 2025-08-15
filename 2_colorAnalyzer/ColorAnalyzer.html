@@ -1,1124 +1,1138 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>绘画色彩分析器 (支持批处理)</title>
-  <style>
-    :root{--gray-50:#f8fafc;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;--blue-50:#eff6ff;--blue-100:#dbeafe;--blue-600:#2563eb;--blue-700:#1d4ed8;--green-600:#16a34a;--green-700:#15803d;--white:#ffffff;--shadow-sm:0 1px 2px rgba(0,0,0,0.08);--shadow-lg:0 10px 15px rgba(0,0,0,0.10), 0 4px 6px rgba(0,0,0,0.06);}
-    *,*::before,*::after{box-sizing:border-box;}
-    html,body{margin:0;padding:0;}
-    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;background-color:var(--gray-100);color:var(--gray-800);line-height:1.5;}
-    .container{width:100%;max-width:1200px;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem;}
-    .mx-auto{margin-left:auto;margin-right:auto;}
-    .p-4{padding:1rem;}
-    .p-6{padding:1.5rem;}
-    .px-4{padding-left:1rem;padding-right:1rem;}
-    .py-3{padding-top:0.75rem;padding-bottom:0.75rem;}
-    .pb-2{padding-bottom:0.5rem;}
-    .mt-1{margin-top:0.25rem;}
-    .mt-2{margin-top:0.5rem;}
-    .mt-3{margin-top:0.75rem;}
-    .mt-4{margin-top:1rem;}
-    .mt-6{margin-top:1.5rem;}
-    .mb-2{margin-bottom:0.5rem;}
-    .mb-4{margin-bottom:1rem;}
-    .mb-6{margin-bottom:1.5rem;}
-    .mb-8{margin-bottom:2rem;}
-    .mr-2{margin-right:0.5rem;}
-    .ml-2{margin-left:0.5rem;}
-    .text-center{text-align:center;}
-    .text-3xl{font-size:1.875rem;line-height:2.25rem;}
-    .text-4xl{font-size:2.25rem;line-height:2.5rem;}
-    .text-2xl{font-size:1.5rem;line-height:2rem;}
-    .text-xl{font-size:1.25rem;line-height:1.75rem;}
-    .text-sm{font-size:0.875rem;}
-    .text-xs{font-size:0.75rem;}
-    .font-bold{font-weight:700;}
-    .font-semibold{font-weight:600;}
-    .font-medium{font-weight:500;}
-    .font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
-    .text-gray-900{color:var(--gray-900);}
-    .text-gray-800{color:var(--gray-800);}
-    .text-gray-700{color:var(--gray-700);}
-    .text-gray-600{color:var(--gray-600);}
-    .text-gray-500{color:var(--gray-500);}
-    .text-blue-600{color:var(--blue-600);}
-    .bg-white{background-color:var(--white);}
-    .bg-gray-50{background-color:var(--gray-50);}
-    .bg-gray-100{background-color:var(--gray-100);}
-    .bg-gray-200{background-color:var(--gray-200);}
-    .bg-blue-50{background-color:var(--blue-50);}
-    .bg-blue-100{background-color:var(--blue-100);}
-    .bg-blue-600{background-color:var(--blue-600);}
-    .bg-green-600{background-color:var(--green-600);}
-    .text-white{color:#fff;}
-    .w-full{width:100%;}
-    .h-full{height:100%;}
-    .h-auto{height:auto;}
-    .h-12{height:3rem;}
-    .h-48{height:12rem;}
-    .rounded{border-radius:0.25rem;}
-    .rounded-md{border-radius:0.375rem;}
-    .rounded-lg{border-radius:0.5rem;}
-    .rounded-xl{border-radius:0.75rem;}
-    .shadow{box-shadow:var(--shadow-sm);}
-    .shadow-lg{box-shadow:var(--shadow-lg);}
-    .border{border:1px solid var(--gray-200);}
-    .border-b{border-bottom:1px solid var(--gray-200);}
-    .grid{display:grid;}
-    .grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr));}
-    .grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
-    .grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
-    .grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr));}
-    .gap-1{gap:0.25rem;}
-    .gap-2{gap:0.5rem;}
-    .gap-4{gap:1rem;}
-    .gap-8{gap:2rem;}
-    .flex{display:flex;}
-    .flex-col{flex-direction:column;}
-    .items-center{align-items:center;}
-    .justify-center{justify-content:center;}
-    .justify-between{justify-content:space-between;}
-    .object-contain{object-fit:contain;}
-    .cursor-pointer{cursor:pointer;}
-    .appearance-none{appearance:none;-webkit-appearance:none;}
-    .relative{position:relative;}
-    .h-fit{height:fit-content;}
-    .hidden{display:none !important;}
-    .list-disc{list-style-type:disc;}
-    .list-inside{list-style-position:inside;}
-    .min-h-\[400px\]{min-height:400px;}
-    .space-y-6 > * + *{margin-top:1.5rem;}
-    .transition-colors{transition:background-color .3s ease,color .3s ease,border-color .3s ease;}
-    .hover\:bg-blue-700:hover{background-color:var(--blue-700);}
-    .hover\:bg-green-700:hover{background-color:var(--green-700);}
-    @media (min-width:640px){.sm\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}.sm\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr));}}
-    @media (min-width:768px){.md\:text-4xl{font-size:2.25rem;line-height:2.5rem;}.md\:p-8{padding:2rem;}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}.md\:grid-cols-8{grid-template-columns:repeat(8,minmax(0,1fr));}}
-    @media (min-width:1024px){.lg\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr));}.lg\:col-span-4{grid-column:span 4 / span 4;}.lg\:col-span-8{grid-column:span 8 / span 8;}}
-    button:disabled{background-color:var(--gray-400) !important;cursor:not-allowed !important;}
-    #imageUpload{color:var(--gray-500);font-size:0.875rem;}
-    #imageUpload::file-selector-button{margin-right:1rem;padding:0.5rem 1rem;border:0;border-radius:0.5rem;background:var(--blue-50);color:var(--blue-700);font-weight:600;cursor:pointer;}
-    #imageUpload:hover::file-selector-button{background:var(--blue-100);}
-    input[type="range"]{width:100%;height:8px;border-radius:0.5rem;background:var(--gray-200);outline:none;cursor:pointer;}
-    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--blue-600);border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.1);}
-    input[type="range"]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:var(--blue-600);}
-    input[type="range"]::-moz-range-track{height:8px;background:var(--gray-200);border-radius:0.5rem;}
-    .loader{border:5px solid #f3f3f3;border-top:5px solid #3498db;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;}
-    @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-    .tooltip{position:absolute;background-color:rgba(0,0,0,0.8);color:white;padding:5px 10px;border-radius:5px;font-size:12px;pointer-events:none;opacity:0;transition:opacity 0.2s;white-space:nowrap;z-index:10;}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>绘画色彩分析器 - 集成与对比</title>
+	<style>
+		:root{--gray-50:#f8fafc;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;--blue-50:#eff6ff;--blue-100:#dbeafe;--blue-600:#2563eb;--blue-700:#1d4ed8;--green-600:#16a34a;--green-700:#15803d;--white:#ffffff;--shadow-sm:0 1px 2px rgba(0,0,0,0.08);--shadow-lg:0 10px 15px rgba(0,0,0,0.10), 0 4px 6px rgba(0,0,0,0.06);}
+		*,*::before,*::after{box-sizing:border-box;}
+		html,body{margin:0;padding:0;}
+		body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;background-color:var(--gray-100);color:var(--gray-800);line-height:1.5;}
+		.container{width:100%;max-width:1280px;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem;}
+		.mx-auto{margin-left:auto;margin-right:auto;}
+		.p-4{padding:1rem;}
+		.p-6{padding:1.5rem;}
+		.px-4{padding-left:1rem;padding-right:1rem;}
+		.py-3{padding-top:0.75rem;padding-bottom:0.75rem;}
+		.mt-2{margin-top:0.5rem;}
+        .mt-4{margin-top:1rem;}
+		.mb-2{margin-bottom:0.5rem;}
+		.mb-3{margin-bottom:0.75rem;}
+		.mb-4{margin-bottom:1rem;}
+		.mb-6{margin-bottom:1.5rem;}
+		.mb-8{margin-bottom:2rem;}
+		.text-center{text-align:center;}
+		.text-3xl{font-size:1.875rem;line-height:2.25rem;}
+		.text-2xl{font-size:1.5rem;line-height:2rem;}
+		.text-xl{font-size:1.25rem;line-height:1.75rem;}
+		.text-sm{font-size:0.875rem;}
+		.text-xs{font-size:0.75rem;}
+		.font-bold{font-weight:700;}
+		.font-semibold{font-weight:600;}
+		.font-medium{font-weight:500;}
+		.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+		.text-gray-700{color:var(--gray-700);}
+		.text-gray-600{color:var(--gray-600);}
+		.text-blue-600{color:var(--blue-600);}
+		.bg-white{background-color:var(--white);}
+		.bg-gray-50{background-color:var(--gray-50);}
+		.bg-blue-600{background-color:var(--blue-600);}
+		.bg-green-600{background-color:var(--green-600);}
+		.text-white{color:#fff;}
+		.rounded-lg{border-radius:0.5rem;}
+		.rounded-md{border-radius:0.375rem;}
+		.shadow-lg{box-shadow:var(--shadow-lg);}
+		.grid{display:grid;}
+		.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr));}
+		.lg\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr));}
+		.gap-4{gap:1rem;}
+		.gap-6{gap:1.5rem;}
+		.lg\:col-span-4{grid-column:span 4 / span 4;}
+		.lg\:col-span-8{grid-column:span 8 / span 8;}
+		.min-h-\[400px\]{min-height:400px;}
+		button:disabled{background-color:var(--gray-400) !important;cursor:not-allowed !important;}
+		#imageUpload{color:var(--gray-500);font-size:0.875rem;}
+		#imageUpload::file-selector-button{margin-right:1rem;padding:0.5rem 1rem;border:0;border-radius:0.5rem;background:var(--blue-50);color:var(--blue-700);font-weight:600;cursor:pointer;}
+		#imageUpload:hover::file-selector-button{background:var(--blue-100);}
+		input[type="range"]{width:100%;height:8px;border-radius:0.5rem;background:var(--gray-200);outline:none;cursor:pointer;}
+		input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--blue-600);border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.1);}
+		.loader{border:5px solid #f3f3f3;border-top:5px solid #3498db;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;}
+		@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+		.hidden{display:none !important;}
+		.flex{display:flex;}
+		.items-center{align-items:center;}
+		.justify-between{justify-content:space-between;}
+        .justify-center{justify-content:center;}
+		.object-contain{object-fit:contain;}
+        .w-full{width:100%;}
+		.h-48{height:12rem;}
+		.color-stack-container{width:32%;height:150px;border-radius:0.5rem;overflow:hidden;box-shadow:inset 0 0 0 1px var(--gray-200);display:flex;flex-direction:column-reverse;}
+		.color-block{display:flex;justify-content:center;align-items:center;color:white;text-shadow:1px 1px 2px rgba(0,0,0,0.5);font-weight:bold;transition:height .3s ease;font-size:.75rem;padding:0 .25rem;box-sizing:border-box;}
+		.color-info-wrapper{display:flex;gap:1rem;align-items:center;margin-top:1rem;}
+		.color-details-list{list-style:none;padding:0;margin:0;width:68%;}
+		.color-details-list li{display:flex;align-items:center;margin-bottom:0.5rem;}
+		.color-details-list .color-box{width:20px;height:20px;border-radius:4px;margin-right:.5rem;border:1px solid var(--gray-200);flex-shrink:0;}
+		.color-wheel-container{position:relative;width:100%;max-width:300px;aspect-ratio:1/1;margin-top:1rem;margin-left:auto;margin-right:auto;}
+		.color-wheel-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+		.analysis-section{margin-top:2rem;}
+		.analysis-section h4{font-size:1.125rem;font-weight:600;color:var(--gray-800);margin-bottom:0.75rem;}
+		.analysis-section .bar-chart{display:flex;height:1.5rem;border-radius:0.25rem;overflow:hidden;background-color:var(--gray-200);}
+		.analysis-section .bar{display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:white;text-shadow:1px 1px 2px rgba(0,0,0,0.4);}
+		.warm-bar{background-color:#e11d48;}
+		.cool-bar{background-color:#2563eb;}
+		.harmony-badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-weight:600;}
+		.harmony-analogous{background-color:#dbeafe;color:#1d4ed8;}
+		.harmony-complementary{background-color:#fecaca;color:#b91c1c;}
+		.harmony-triadic{background-color:#dcfce7;color:#15803d;}
+		.switch{position:relative;display:inline-block;width:110px;height:34px;}
+		.switch input{opacity:0;width:0;height:0;}
+		.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--gray-200);transition:.4s;border-radius:34px;}
+		.slider:before{position:absolute;content:"";height:26px;width:26px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%;}
+		input:checked + .slider{background-color:var(--blue-600);}
+		input:checked + .slider:before{transform:translateX(76px);}
+		.slider:after{content:'K-Means';position:absolute;color:var(--gray-700);display:block;top:50%;left:58%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;}
+		input:checked + .slider:after{content:'中位切分';left:30%;color:white;}
+		.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+		.metric-badge{display:inline-block;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;}
+		.apply-tone-btn{padding:2px 8px;font-size:11px;font-weight:600;background-color:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-200);border-radius:999px;cursor:pointer;transition:background-color 0.2s;}
+		.apply-tone-btn:hover{background-color:var(--blue-50);color:var(--blue-700);}
+		.modal{position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s ease;pointer-events:none;}
+		.modal.show{opacity:1;pointer-events:auto;}
+		.modal-content{background-color:#fff;margin:auto;padding:20px;border:1px solid #888;border-radius:0.5rem;width:90%;max-width:700px;box-shadow:0 4px 8px rgba(0,0,0,0.2),0 6px 20px rgba(0,0,0,0.19);}
+		.modal-close{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer;line-height:1;}
+		.modal-close:hover{color:black;}
+		.modal-body{margin-top:1rem;text-align:center;}
 
-    .color-stack-container{width:30%;height:150px;border-radius:0.5rem;overflow:hidden;box-shadow:inset 0 0 0 1px var(--gray-200);display:flex;flex-direction:column-reverse;}
-    .color-block{display:flex;justify-content:center;align-items:center;color:white;text-shadow:1px 1px 2px rgba(0,0,0,0.5);font-weight:bold;transition:height .3s ease;font-size:.75rem;padding:0 .25rem;box-sizing:border-box;}
-    .color-info-wrapper{display:flex;gap:1rem;align-items:center;margin-top:1rem;}
-    .color-details-list{list-style:none;padding:0;margin:0;width:70%;}
-    .color-details-list li{display:flex;align-items:center;margin-bottom:0.5rem;}
-    .color-details-list .color-box{width:20px;height:20px;border-radius:4px;margin-right:.5rem;border:1px solid var(--gray-200);flex-shrink:0;}
-
-    .color-wheel-container {position: relative;width: 100%;max-width: 300px;aspect-ratio: 1 / 1;margin-top: 1rem;margin-left: auto;margin-right: auto;}
-    .color-wheel-canvas {position: absolute;top: 0;left: 0;width: 100%;height: 100%;}
-    .hue-category-labels{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;justify-content:center;align-items:center;}
-    .hue-category-labels > div{position:absolute;font-size:.875rem;font-weight:bold;color:var(--gray-700);text-shadow:0 0 2px white;}
-    
-    /* Styles for new analysis sections */
-    .analysis-section { margin-top: 2rem; }
-    .analysis-section h4 { font-size: 1.125rem; font-weight: 600; color: var(--gray-800); margin-bottom: 0.75rem; }
-    .analysis-section p { color: var(--gray-700); margin-bottom: 0.5rem; }
-    .analysis-section .bar-chart { display: flex; height: 1.5rem; border-radius: 0.25rem; overflow: hidden; background-color: var(--gray-200); }
-    .analysis-section .bar { display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
-    .warm-bar { background-color: #e11d48; } /* Rose 600 */
-    .cool-bar { background-color: #2563eb; } /* Blue 600 */
-    .harmony-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; }
-    .harmony-analogous { background-color: #dbeafe; color: #1d4ed8; } /* Blue */
-    .harmony-complementary { background-color: #fecaca; color: #b91c1c; } /* Red */
-    .harmony-triadic { background-color: #dcfce7; color: #15803d; } /* Green */
-
-    /* Toggle Switch for Algorithm */
-    .switch { position: relative; display: inline-block; width: 110px; height: 34px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gray-200); transition: .4s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--blue-600); }
-    input:checked + .slider:before { transform: translateX(76px); }
-    .slider:after { content: 'K-Means'; position: absolute; color: var(--gray-700); display: block; top: 50%; left: 58%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600; }
-    input:checked + .slider:after { content: '中位切分'; left: 30%; color: white; }
-
-  </style>
+        /* 新增/修改：黑白灰分析样式 */
+		.bw-analysis-container{background:var(--white); border: 1px solid var(--gray-200); border-radius:0.5rem; padding:1rem; margin-top:1.5rem;}
+        .bw-analysis-container h4 { margin-top:0; font-size: 1.125rem; font-weight: 600; color: var(--gray-800); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--gray-200);}
+		.bw-image-container{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+		.bw-image{width:100%;height:160px;object-fit:contain;border:1px solid var(--gray-200);border-radius:0.375rem;}
+        .bw-image-placeholder {width:100%;height:160px;background-color: var(--gray-100); display:flex; align-items:center; justify-content:center; color: var(--gray-500); border:1px solid var(--gray-200);border-radius:0.375rem; }
+		.histogram-container{width:100%;height:100px;background:white;border:1px solid var(--gray-200);border-radius:0.375rem;position:relative;overflow:hidden; display:flex; align-items:flex-end; gap: 1px; padding: 0 1px;}
+		.histogram-bar{flex-grow: 1; background:linear-gradient(to top, #374151, #6b7280); }
+		.nine-grid-container{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;width:120px;height:120px;margin:1rem auto;}
+		.nine-grid-cell{background:white;border:1px solid var(--gray-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--gray-800);}
+		.bw-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:0.75rem;margin-top:1rem;}
+		.bw-metric{background:var(--gray-50);padding:0.75rem;border-radius:0.375rem;border:1px solid var(--gray-200);text-align:center;}
+		.bw-metric-value{font-size:1.125rem;font-weight:700;color:var(--blue-600);}
+		.bw-metric-label{font-size:0.75rem;color:var(--gray-600);margin-top:0.25rem;}
+		.bw-suggestions{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:0.375rem;padding:1rem;margin-top:1rem;}
+		.bw-suggestion-item{display:flex;align-items:center;margin-bottom:0.5rem;padding:0.5rem;background:var(--white);border-radius:0.25rem;}
+		.bw-suggestion-icon{margin-right:0.5rem;font-size:1.25rem;}
+		.bw-suggestion-text{font-size:0.875rem;color:var(--gray-700);}
+	</style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+	<div class="container mx-auto p-4">
+		<header class="text-center mb-8">
+			<h1 class="text-3xl font-bold">绘画色彩分析器（集成与算法对比）</h1>
+			<p class="mt-2 text-gray-600">整合色彩分析与黑白灰关系，提供全面、可对比的画面分析报告。对主色明确、风格统一的图像，需要大的色彩关系，推荐kmeans算法。对色彩丰富、细节复杂的图像，需要发现色彩的多样性，推荐中位切分。省事用比较模式</p>
+			<p class="mt-2 text-gray-600">2025-8-15</p>
+		</header>
 
-  <div class="container mx-auto p-4 md:p-8">
-    <header class="text-center mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900">绘画色彩分析器</h1>
-      <p class="mt-2 text-gray-600">支持单张或批量分析画作用色特点，并可导出完整分析报告。</p>
-    </header>
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <div class="lg:col-span-4 bg-white p-6 rounded-xl shadow-lg h-fit">
-        <h2 class="text-xl font-bold mb-4">控制面板</h2>
-        
-        <div class="mb-6">
-          <label class="block mb-2 font-semibold text-gray-700">1. 上传图片 (可多选)</label>
-          <input type="file" id="imageUpload" accept="image/*" multiple class="block w-full text-sm text-gray-500 cursor-pointer">
-          <div id="fileList" class="mt-2 text-sm text-gray-600"></div>
-        </div>
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+			<div class="lg:col-span-4 bg-white p-6 rounded-lg shadow-lg">
+				<h2 class="text-xl font-bold mb-4">控制面板</h2>
+				<div class="mb-6">
+					<label class="block mb-2 font-semibold text-gray-700">1. 上传图片 (可多选)</label>
+					<input type="file" id="imageUpload" accept="image/*" multiple class="block w-full text-sm text-gray-500 cursor-pointer">
+					<div id="fileList" class="mt-2 text-sm text-gray-600"></div>
+				</div>
 
-        <div class="mb-6">
-          <label class="block mb-2 font-semibold text-gray-700">2. 设定单图取色精度</label>
-          <div class="flex items-center">
-            <span class="text-sm text-gray-500 mr-2">粗</span>
-            <input type="range" id="colorCount" min="3" max="30" value="8" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-            <span class="text-sm text-gray-500 ml-2">精</span>
-          </div>
-          <div class="text-center mt-2 font-medium text-blue-600">
-            每图提取 <span id="colorCountValue">8</span> 种主色
-          </div>
-        </div>
-        
-        <div class="mb-6">
-          <label class="block mb-2 font-semibold text-gray-700">3. 选择取色算法</label>
-            <div class="flex items-center justify-center mt-2">
-                <label class="switch">
-                    <input type="checkbox" id="algorithmToggle">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
+				<div class="mb-6">
+					<label class="block mb-2 font-semibold text-gray-700">2. 设定单图取色精度</label>
+					<div class="flex items-center">
+						<span class="text-sm text-gray-600" style="margin-right:.5rem;">粗</span>
+						<input type="range" id="colorCount" min="3" max="30" value="8">
+						<span class="text-sm text-gray-600" style="margin-left:.5rem;">精</span>
+					</div>
+					<div class="text-center mt-2 font-medium text-blue-600">每图提取 <span id="colorCountValue">8</span> 种主色</div>
+				</div>
 
-        <div>
-          <button id="analyzeBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-            开始分析
-          </button>
-          <button id="exportBtn" class="w-full mt-3 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors hidden">
-            导出分析报告 (JSON)
-          </button>
-        </div>
-        <div id="loader" class="hidden mx-auto mt-6 loader"></div>
-        <p id="status" class="text-center mt-4 text-sm text-gray-500"></p>
-      </div>
-      <div class="lg:col-span-8 bg-white p-6 rounded-xl shadow-lg min-h-[400px]">
-        <div id="resultsPlaceholder" class="flex flex-col items-center justify-center h-full text-gray-500">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" width="64" height="64" style="color: currentColor;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <p>请上传图片并点击“开始分析”</p>
-        </div>
-        <div id="resultsContainer" class="hidden">
-          <div id="batchSummary" class="mb-8">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2">批处理总结报告</h2>
-            <h3 class="font-semibold mb-2">共通色板 (按重要性由高到低排列)</h3>
-            <div id="commonPaletteContainer">
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">红色系</h4><div id="commonPaletteRed" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">橙色系</h4><div id="commonPaletteOrange" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">黄色系</h4><div id="commonPaletteYellow" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">绿色系</h4><div id="commonPaletteGreen" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">蓝色系</h4><div id="commonPaletteBlue" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-                <div class="mb-4"><h4 class="font-medium text-gray-700 mb-2">紫色系</h4><div id="commonPaletteViolet" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2"></div></div>
-            </div>
-          </div>
-          <div id="statisticalReport" class="mt-8">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2">统计分析报告</h2>
-            <div id="reportContent" class="space-y-4"></div>
-          </div>
-          <div>
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2 mt-8">单张图片分析</h2>
-            <div id="individualResults" class="space-y-6"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="tooltip" class="tooltip"></div>
-  </div>
+				<div class="mb-6">
+					<label class="block mb-2 font-semibold text-gray-700">3. 色彩分析算法</label>
+					<div class="flex items-center justify-between">
+						<label class="switch">
+							<input type="checkbox" id="algorithmToggle">
+							<span class="slider"></span>
+						</label>
+						<div class="flex items-center">
+							<input type="checkbox" id="compareMode" class="mr-2">
+							<label for="compareMode" class="text-sm text-gray-700">比较模式</label>
+						</div>
+					</div>
+				</div>
+                
+                <div class="mb-6">
+					<label class="block mb-2 font-semibold text-gray-700">4. 附加分析</label>
+					<div class="flex items-center">
+						<input type="checkbox" id="bwAnalysisMode" class="mr-2" checked>
+						<label for="bwAnalysisMode" class="text-sm text-gray-700">启用黑白灰分析</label>
+					</div>
+				</div>
 
-<script>
-    // --- DOM Elements ---
-    const imageUpload = document.getElementById('imageUpload');
-    const fileList = document.getElementById('fileList');
-    const colorCountSlider = document.getElementById('colorCount');
-    const colorCountValue = document.getElementById('colorCountValue');
-    const algorithmToggle = document.getElementById('algorithmToggle');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const exportBtn = document.getElementById('exportBtn');
-    const resultsContainer = document.getElementById('resultsContainer');
-    const resultsPlaceholder = document.getElementById('resultsPlaceholder');
-    const individualResultsContainer = document.getElementById('individualResults');
-    const statisticalReportContainer = document.getElementById('reportContent');
-    const loader = document.getElementById('loader');
-    const statusEl = document.getElementById('status');
-    const tooltip = document.getElementById('tooltip');
-    let analysisData = null;
+				<div>
+					<button id="analyzeBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">开始分析</button>
+					<button id="exportBtn" class="w-full mt-3 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hidden">导出分析报告 (JSON)</button>
+				</div>
 
-    const paletteContainers = {
-        red: document.getElementById('commonPaletteRed'),
-        orange: document.getElementById('commonPaletteOrange'),
-        yellow: document.getElementById('commonPaletteYellow'),
-        green: document.getElementById('commonPaletteGreen'),
-        blue: document.getElementById('commonPaletteBlue'),
-        violet: document.getElementById('commonPaletteViolet'),
-    };
+				<div id="loader" class="hidden mx-auto mt-6 loader"></div>
+				<p id="status" class="text-center mt-4 text-sm text-gray-600"></p>
+			</div>
 
-    // --- Event Listeners ---
-    colorCountSlider.addEventListener('input', (e) => {
-      colorCountValue.textContent = e.target.value;
-    });
+			<div class="lg:col-span-8 bg-white p-6 rounded-lg shadow-lg min-h-[400px]">
+				<div id="resultsPlaceholder" class="flex flex-col items-center justify-center h-full text-gray-600">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" width="64" height="64" style="color: currentColor;">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+					</svg>
+					<p>请上传图片并点击“开始分析”</p>
+				</div>
 
-    imageUpload.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        let files = Array.from(e.target.files);
-        fileList.innerHTML = `${files.length} 个文件已选择: <ul class="list-disc list-inside mt-1">${files.map(f => `<li>${f.name}</li>`).join('')}</ul>`;
-      } else {
-        fileList.innerHTML = '';
-      }
-    });
+				<div id="resultsContainer" class="hidden">
+					<div id="compareSummary" class="mb-8 hidden">
+						<h2 class="text-2xl font-bold mb-4 border-b" style="padding-bottom:.5rem;">批处理算法对比报告</h2>
+						<div id="compareReport" class="space-y-3"></div>
+					</div>
 
-    analyzeBtn.addEventListener('click', async () => {
-      const files = imageUpload.files;
-      if (!files || files.length === 0) {
-        alert('请先上传至少一张图片！');
-        return;
-      }
-      loader.classList.remove('hidden');
-      statusEl.textContent = '开始分析...';
-      analyzeBtn.disabled = true;
-      exportBtn.classList.add('hidden');
-      resultsContainer.classList.add('hidden');
-      resultsPlaceholder.classList.add('hidden');
-      individualResultsContainer.innerHTML = '';
-      statisticalReportContainer.innerHTML = '';
-      Object.values(paletteContainers).forEach(pc => pc.innerHTML = '');
-      
-      const useMedianCut = algorithmToggle.checked;
-      analysisData = {
-        analysisDate: new Date().toISOString(),
-        settings: {
-          colorsPerImage: parseInt(colorCountSlider.value),
-          algorithm: useMedianCut ? 'Median Cut' : 'K-Means'
-        },
-        individualImages: [],
-        batchSummary: {}
-      };
+					<div id="batchSummary" class="mb-8 hidden">
+						<h2 class="text-2xl font-bold mb-4 border-b" style="padding-bottom:.5rem;">共通色板（按重要性）</h2>
+						<div id="commonPaletteContainer" class="grid" style="grid-template-columns:1fr;gap:.75rem;"></div>
+					</div>
 
-      const colorCount = parseInt(colorCountSlider.value);
-      for (let i = 0; i < files.length; i++) {
-        statusEl.textContent = `正在分析第 ${i + 1} / ${files.length} 张图片: ${files[i].name}`;
-        try {
-          const result = await analyzeSingleImage(files[i], colorCount, useMedianCut);
-          analysisData.individualImages.push(result);
-        } catch (error) {
-          console.error(`分析失败: ${files[i].name}`, error);
-          analysisData.individualImages.push({ name: files[i].name, error: `分析失败: ${error.message}` });
-        }
-      }
-      statusEl.textContent = '正在生成报告...';
-      setTimeout(() => {
-        const commonColors = findCommonColors(analysisData.individualImages, 30);
-        analysisData.batchSummary = { commonPalette: commonColors };
-        generateStatisticalReport(analysisData);
-        displayResults(analysisData);
-        loader.classList.add('hidden');
-        statusEl.textContent = `分析完成！共处理 ${files.length} 张图片。`;
-        analyzeBtn.disabled = false;
-        exportBtn.classList.remove('hidden');
-      }, 50);
-    });
+					<div id="statisticalReport" class="mt-8 hidden">
+						<h2 class="text-2xl font-bold mb-4 border-b" style="padding-bottom:.5rem;">统计分析报告</h2>
+						<div id="reportContent" class="space-y-4"></div>
+					</div>
 
-    exportBtn.addEventListener('click', () => {
-      if (!analysisData) return;
-      const dataStr = JSON.stringify(analysisData, null, 2);
-      const blob = new Blob([dataStr], {type: "application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `color-analysis-report-${new Date().getTime()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
+					<div class="mt-8">
+						<h2 class="text-2xl font-bold mb-4 border-b" style="padding-bottom:.5rem;">单张图片分析</h2>
+						<div id="individualResults" class="space-y-6"></div>
+					</div>
+				</div>
+			</div>
+		</div>
 
-    // --- Main Analysis Pipeline ---
-    function analyzeSingleImage(file, colorCount, useMedianCut) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const colors = getDominantColors(img, colorCount, useMedianCut);
-            resolve({
-              name: file.name,
-              imageDataUrl: event.target.result,
-              dominantColors: colors
-            });
-          };
-          img.onerror = (err) => reject(new Error('图片加载失败'));
-          img.src = event.target.result;
-        };
-        reader.onerror = (err) => reject(new Error('文件读取失败'));
-        reader.readAsDataURL(file);
-      });
-    }
+		<div id="imageModal" class="modal">
+			<div class="modal-content">
+				<span id="modalClose" class="modal-close">&times;</span>
+				<h3 id="modalTitle" class="text-xl font-bold">图像色调转换</h3>
+				<div class="modal-body">
+					<p id="modalLoader">正在转换图片，请稍候...</p>
+					<canvas id="modalCanvas"></canvas>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    // ===== Utilities =====
-function clamp01(x) { return Math.min(1, Math.max(0, x)); }
-function srgbToLinear(u) { u /= 255; return u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); }
-function linearToSrgb(u) { 
-  return Math.round(255 * (u <= 0.0031308 ? 12.92 * u : 1.055 * Math.pow(u, 1/2.4) - 0.055));
-}
+	<script>
+		// --- DOM 元素 ---
+		const imageUpload = document.getElementById('imageUpload');
+		const fileList = document.getElementById('fileList');
+		const colorCountSlider = document.getElementById('colorCount');
+		const colorCountValue = document.getElementById('colorCountValue');
+		const algorithmToggle = document.getElementById('algorithmToggle'); // off: KMeans, on: MedianCut
+		const compareModeEl = document.getElementById('compareMode');
+        const bwAnalysisModeEl = document.getElementById('bwAnalysisMode');
+		const analyzeBtn = document.getElementById('analyzeBtn');
+		const exportBtn = document.getElementById('exportBtn');
+		const resultsContainer = document.getElementById('resultsContainer');
+		const resultsPlaceholder = document.getElementById('resultsPlaceholder');
+		const individualResultsContainer = document.getElementById('individualResults');
+		const statisticalReportContainer = document.getElementById('statisticalReport');
+		const compareReportContainer = document.getElementById('compareSummary');
+		const commonPaletteContainer = document.getElementById('batchSummary');
+		const loader = document.getElementById('loader');
+		const statusEl = document.getElementById('status');
 
-function rgbToXyz([r, g, b]) {
-  // sRGB D65
-  const R = srgbToLinear(r), G = srgbToLinear(g), B = srgbToLinear(b);
-  const x = 0.4124564*R + 0.3575761*G + 0.1804375*B;
-  const y = 0.2126729*R + 0.7151522*G + 0.0721750*B;
-  const z = 0.0193339*R + 0.1191920*G + 0.9503041*B;
-  return [x, y, z];
-}
+		const imageModal = document.getElementById('imageModal');
+		const modalClose = document.getElementById('modalClose');
+		const modalCanvas = document.getElementById('modalCanvas');
+		const modalLoader = document.getElementById('modalLoader');
+		const modalTitle = document.getElementById('modalTitle');
 
-function xyzToRgb([x, y, z]) {
-  const R =  3.2404542*x - 1.5371385*y - 0.4985314*z;
-  const G = -0.9692660*x + 1.8760108*y + 0.0415560*z;
-  const B =  0.0556434*x - 0.2040259*y + 1.0572252*z;
-  return [
-    linearToSrgb(clamp01(R)),
-    linearToSrgb(clamp01(G)),
-    linearToSrgb(clamp01(B)),
-  ];
-}
+		let analysisData = null;
 
-function fLab(t){ const d = 6/29; return t > d**3 ? Math.cbrt(t) : (t/(3*d*d) + 4/29); }
-function finvLab(t){ const d = 6/29; return t > d ? t*t*t : 3*d*d*(t - 4/29); }
+		// --- 事件 ---
+		colorCountSlider.addEventListener('input', (e) => { colorCountValue.textContent = e.target.value; });
+		imageUpload.addEventListener('change', (e) => {
+			if (e.target.files.length > 0) {
+				const files = Array.from(e.target.files);
+				fileList.innerHTML = `${files.length} 个文件已选择: <ul class="mt-2" style="padding-left:1rem;margin:0;">${files.map(f => `<li class="text-sm text-gray-700">${f.name}</li>`).join('')}</ul>`;
+			} else { fileList.innerHTML = ''; }
+		});
+		analyzeBtn.addEventListener('click', analyzeBatch);
+		exportBtn.addEventListener('click', exportData);
+		modalClose.addEventListener('click', () => imageModal.classList.remove('show'));
+		window.addEventListener('click', (event) => { if (event.target == imageModal) imageModal.classList.remove('show'); });
 
-function rgbToLab(rgb) {
-  const [x, y, z] = rgbToXyz(rgb);
-  // D65 reference white
-  const Xn = 0.95047, Yn = 1.00000, Zn = 1.08883;
-  const fx = fLab(x / Xn), fy = fLab(y / Yn), fz = fLab(z / Zn);
-  const L = 116*fy - 16;
-  const a = 500*(fx - fy);
-  const b = 200*(fy - fz);
-  return [L, a, b];
-}
+		individualResultsContainer.addEventListener('click', async (e) => {
+			if (e.target.matches('.apply-tone-btn')) {
+				e.preventDefault();
+				const imageIndex = parseInt(e.target.dataset.imageIndex);
+				const algo = e.target.dataset.algo;
+				const colorIndex = parseInt(e.target.dataset.colorIndex);
+				const imageData = analysisData.individualImages[imageIndex];
+				const targetColor = imageData[algo].dominantColors[colorIndex];
 
-function labToRgb([L, a, b]) {
-  const fy = (L + 16) / 116;
-  const fx = fy + a / 500;
-  const fz = fy - b / 200;
-  // D65 reference white
-  const Xn = 0.95047, Yn = 1.00000, Zn = 1.08883;
-  const x = Xn * finvLab(fx), y = Yn * finvLab(fy), z = Zn * finvLab(fz);
-  return xyzToRgb([x, y, z]);
-}
+				modalTitle.textContent = `图像色调转换 (基于 ${targetColor.hex})`;
+				modalLoader.style.display = 'block';
+				modalCanvas.style.display = 'none';
+				imageModal.classList.add('show');
 
-function rgbToHex(r, g, b) {
-  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
-}
+				setTimeout(async () => {
+					const originalImage = document.querySelector(`img[data-image-index='${imageIndex}']`);
+					await applyMonochromaticTone(originalImage, targetColor);
+					modalLoader.style.display = 'none';
+					modalCanvas.style.display = 'block';
+				}, 50);
+			}
+		});
 
-// ===== Improved Median-Cut (variance-based, perceptual) =====
-function medianCutImproved(pixelsRGB, k, { useLab = true } = {}) {
-  const spacePixels = useLab ? pixelsRGB.map(rgbToLab) : pixelsRGB; // L*a*b* or RGB
-  const dim = 3;
+		// --- 主流程 ---
+		async function analyzeBatch() {
+			const files = imageUpload.files;
+			if (!files || files.length === 0) { alert('请先上传至少一张图片！'); return; }
 
-  const makeBox = (idxs) => ({ idxs, // indices into spacePixels
-    stats: null
-  });
+			const k = parseInt(colorCountSlider.value);
+			const useMedianCut = algorithmToggle.checked;
+			const compareMode = compareModeEl.checked;
+            const bwAnalysisMode = bwAnalysisModeEl.checked;
 
-  function computeStats(box) {
-    const n = box.idxs.length;
-    const mean = [0,0,0];
-    for (const i of box.idxs) {
-      const p = spacePixels[i];
-      mean[0]+=p[0]; mean[1]+=p[1]; mean[2]+=p[2];
-    }
-    mean[0]/=n; mean[1]/=n; mean[2]/=n;
-    const varr = [0,0,0];
-    for (const i of box.idxs) {
-      const p = spacePixels[i];
-      varr[0]+= (p[0]-mean[0])**2;
-      varr[1]+= (p[1]-mean[1])**2;
-      varr[2]+= (p[2]-mean[2])**2;
-    }
-    varr[0]/=n; varr[1]/=n; varr[2]/=n;
-    const totalVar = varr[0]+varr[1]+varr[2];
-    box.stats = { mean, varr, totalVar, n };
-    return box.stats;
-  }
-
-  // priority: larger n * totalVar first
-  function boxScore(box){ const s = box.stats || computeStats(box); return s.n * s.totalVar; }
-
-  const boxes = [ makeBox([...spacePixels.keys()]) ];
-  computeStats(boxes[0]);
-
-  while (boxes.length < k) {
-    // pick the most "splittable" box
-    boxes.sort((a,b)=>boxScore(b)-boxScore(a));
-    const box = boxes[0];
-    if ((box.stats?.n ?? 0) <= 1) break;
-
-    // choose split dim by largest variance
-    const v = box.stats.varr;
-    let splitDim = 0; if (v[1] > v[splitDim]) splitDim = 1; if (v[2] > v[splitDim]) splitDim = 2;
-
-    // sort indices along split dim
-    box.idxs.sort((i,j)=> spacePixels[i][splitDim] - spacePixels[j][splitDim]);
-
-    // split at median (by index). If ties, still splits population fairly.
-    const mid = Math.floor(box.idxs.length / 2);
-    const leftIdxs = box.idxs.slice(0, mid);
-    const rightIdxs = box.idxs.slice(mid);
-
-    if (leftIdxs.length === 0 || rightIdxs.length === 0) break; // cannot split further
-
-    // replace current box with two children
-    boxes.shift();
-    const b1 = makeBox(leftIdxs), b2 = makeBox(rightIdxs);
-    computeStats(b1); computeStats(b2);
-    boxes.push(b1, b2);
-  }
-
-  // representative color: mean in perceptual space -> back to sRGB
-  const results = boxes.map(box => {
-    const m = box.stats?.mean ?? computeStats(box).mean;
-    const rgb = useLab ? labToRgb(m).map(Math.round) : m.map(Math.round);
-    return {
-      rgb,
-      proportion: (box.stats?.n ?? box.idxs.length) / spacePixels.length
-    };
-  });
-
-  return results;
-}
-
-function getDominantColors(img, k, options = {}) {
-  const {
-    maxDim = 150,
-    useLab = true,
-    disableSmoothing = true,
-    alphaThreshold = 32,
-  } = options;
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Resize with optional smoothing
-      let { width, height } = img;
-      if (width > height && width > maxDim) {
-        height = Math.round(height * maxDim / width);
-        width = maxDim;
-      } else if (height > maxDim) {
-        width = Math.round(width * maxDim / height);
-        height = maxDim;
-      }
-      canvas.width = width;
-      canvas.height = height;
-
-      if (disableSmoothing) {
-        ctx.imageSmoothingEnabled = false;
-        ctx.imageSmoothingQuality = 'low';
-      }
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Extract and filter pixels
-      const raw = ctx.getImageData(0, 0, width, height).data;
-      const pixels = [];
-      for (let i = 0; i < raw.length; i += 4) {
-        const alpha = raw[i + 3];
-        if (alpha < alphaThreshold) continue;
-        pixels.push([raw[i], raw[i + 1], raw[i + 2]]);
-      }
-
-      if (pixels.length === 0) return [];
-
-      // Convert to perceptual space
-      const spacePixels = useLab ? pixels.map(rgbToLab) : pixels;
-
-      // K-Means clustering (simple version or existing)
-      const result = kmeans(spacePixels, Math.min(k, spacePixels.length)); // you can plug in your existing kmeans
-
-      // Post-process clusters
-      const output = result.centroids.map((centroid, i) => {
-        const assignedIdxs = result.assignments.map((a, idx) => a === i ? idx : -1).filter(idx => idx !== -1);
-        const clusterRGB = assignedIdxs.map(idx => pixels[idx]);
-        const n = clusterRGB.length;
-
-        // Compute mean RGB and Lab
-        let R=0, G=0, B=0, L=0, a=0, b=0;
-        for (const rgb of clusterRGB) {
-          R += rgb[0]; G += rgb[1]; B += rgb[2];
-          const [l_, a_, b_] = rgbToLab(rgb);
-          L += l_; a += a_; b += b_;
-        }
-        R /= n; G /= n; B /= n; L /= n; a /= n; b /= n;
-
-        const hue = Math.atan2(b, a) * 180 / Math.PI;
-        const saturation = Math.sqrt(a*a + b*b);
-        const isGray = saturation < 8;
-
-        return {
-          rgb: [Math.round(R), Math.round(G), Math.round(B)],
-          hex: rgbToHex(Math.round(R), Math.round(G), Math.round(B)),
-          proportion: n / pixels.length,
-          lightness: L,
-          saturation,
-          hue: (hue + 360) % 360,
-          grayness: isGray ? 'high' : 'low',
-        };
-      });
-
-      return output.sort((a, b) => b.proportion - a.proportion);
-    }
-
-
-    // --- Color Quantization Algorithms ---
-    function medianCut(pixels, k) {
-        const initialBox = { pixels: pixels, getRange: function(dim) {
-            const values = this.pixels.map(p => p[dim]);
-            return Math.max(...values) - Math.min(...values);
-        }};
-
-        let boxes = [initialBox];
-        while (boxes.length < k && boxes.some(b => b.pixels.length > 1)) {
-            boxes.sort((a, b) => {
-                const rangeA = Math.max(a.getRange(0), a.getRange(1), a.getRange(2));
-                const rangeB = Math.max(b.getRange(0), b.getRange(1), b.getRange(2));
-                return rangeB - rangeA;
-            });
-
-            const boxToSplit = boxes.shift();
-            const ranges = [boxToSplit.getRange(0), boxToSplit.getRange(1), boxToSplit.getRange(2)];
-            const longestDim = ranges.indexOf(Math.max(...ranges));
+			loader.classList.remove('hidden');
+			statusEl.textContent = '开始分析...';
+			analyzeBtn.disabled = true;
+			exportBtn.classList.add('hidden');
+			resultsContainer.classList.add('hidden');
+			resultsPlaceholder.classList.add('hidden');
             
-            boxToSplit.pixels.sort((a, b) => a[longestDim] - b[longestDim]);
-            const medianIndex = Math.floor(boxToSplit.pixels.length / 2);
+            // Clear all result containers
+			individualResultsContainer.innerHTML = '';
+			statisticalReportContainer.querySelector('#reportContent').innerHTML = '';
+            statisticalReportContainer.classList.add('hidden');
+			compareReportContainer.querySelector('#compareReport').innerHTML = '';
+            compareReportContainer.classList.add('hidden');
+			commonPaletteContainer.querySelector('#commonPaletteContainer').innerHTML = '';
+            commonPaletteContainer.classList.add('hidden');
+
+			analysisData = {
+				analysisDate: new Date().toISOString(),
+				settings: {
+					colorsPerImage: k,
+					algorithm: useMedianCut ? 'Median Cut (Lab)' : 'K-Means (Lab)',
+					compareMode,
+                    bwAnalysisMode
+				},
+				individualImages: [],
+				batchSummary: {}
+			};
+
+			for (let i = 0; i < files.length; i++) {
+				statusEl.textContent = `正在分析第 ${i + 1} / ${files.length} 张图片: ${files[i].name}`;
+				try {
+					const result = await analyzeSingleImage(files[i], k, useMedianCut, compareMode, bwAnalysisMode);
+					analysisData.individualImages.push(result);
+				} catch (error) {
+					console.error(`分析失败: ${files[i].name}`, error);
+					analysisData.individualImages.push({ name: files[i].name, error: `分析失败: ${error.message}` });
+				}
+			}
+
+			statusEl.textContent = '正在生成报告...';
+			setTimeout(() => {
+                if (files.length > 1) {
+				    buildBatchReports(analysisData, compareMode);
+                }
+				displayResults(analysisData, compareMode);
+				loader.classList.add('hidden');
+				statusEl.textContent = `分析完成！共处理 ${files.length} 张图片。`;
+				analyzeBtn.disabled = false;
+				exportBtn.classList.remove('hidden');
+			}, 50);
+		}
+
+		function exportData() {
+			if (!analysisData) return;
+			const dataStr = JSON.stringify(analysisData, null, 2);
+			const blob = new Blob([dataStr], {type: "application/json"});
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `color-analysis-report-${new Date().getTime()}.json`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}
+
+		function analyzeSingleImage(file, k, useMedianCut, compareMode, bwAnalysisMode) {
+			return new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = (event) => {
+					const img = new Image();
+					img.onload = async () => {
+						try {
+							const base = { name: file.name, imageDataUrl: event.target.result };
+							const { pixels, width, height } = extractPixels(img, { maxDim: 150, alphaThreshold: 32 });
+							if (pixels.length === 0) {
+								resolve({ ...base, error: '未提取到有效像素' });
+								return;
+							}
+
+							let out = { ...base };
+                            
+                            // B&W Analysis (if enabled)
+                            if (bwAnalysisMode) {
+                                const originalPixelsData = extractPixels(img, { maxDim: 400, alphaThreshold: 32 });
+                                out.bwAnalysis = analyzeBlackWhiteGray(originalPixelsData.pixels, originalPixelsData.width, originalPixelsData.height);
+                            }
+
+                            // Color Analysis
+							if (compareMode) {
+								const kmeansStart = performance.now();
+								const kmeansRes = paletteByKMeansLab(pixels, k);
+								const kmeansTime = performance.now() - kmeansStart;
+								const kmeansDist = distortionDeltaE(pixels, kmeansRes.labCentroids);
+								const kmeansDiversity = paletteDiversity(kmeansRes.labCentroids);
+
+								const mcStart = performance.now();
+								const medianRes = paletteByMedianCutLab(pixels, k);
+								const mcTime = performance.now() - mcStart;
+								const mcDist = distortionDeltaE(pixels, medianRes.labCentroids);
+								const mcDiversity = paletteDiversity(medianRes.labCentroids);
+
+								out.kmeans = {
+									dominantColors: kmeansRes.colors,
+									metrics: { durationMs: kmeansTime, distortion: kmeansDist, diversity: kmeansDiversity }
+								};
+								out.mediancut = {
+									dominantColors: medianRes.colors,
+									metrics: { durationMs: mcTime, distortion: mcDist, diversity: mcDiversity }
+								};
+							} else {
+								if (!useMedianCut) {
+									const t0 = performance.now();
+									const res = paletteByKMeansLab(pixels, k);
+									const t1 = performance.now();
+									out.kmeans = {
+										dominantColors: res.colors,
+										metrics: { durationMs: t1 - t0, distortion: distortionDeltaE(pixels, res.labCentroids), diversity: paletteDiversity(res.labCentroids) }
+									};
+								} else {
+									const t0 = performance.now();
+									const res = paletteByMedianCutLab(pixels, k);
+									const t1 = performance.now();
+									out.mediancut = {
+										dominantColors: res.colors,
+										metrics: { durationMs: t1 - t0, distortion: distortionDeltaE(pixels, res.labCentroids), diversity: paletteDiversity(res.labCentroids) }
+									};
+								}
+							}
+							resolve(out);
+						} catch (e) { reject(e); }
+					};
+					img.onerror = () => reject(new Error('图片加载失败'));
+					img.src = event.target.result;
+				};
+				reader.onerror = () => reject(new Error('文件读取失败'));
+				reader.readAsDataURL(file);
+			});
+		}
+
+        // --- 全局报告 ---
+		function buildBatchReports(data, compareMode) {
+			const allResults = data.individualImages.filter(r => !r.error);
+            if (allResults.length === 0) return;
+
+			let palettePool = [];
+			if (compareMode) {
+				allResults.forEach(r => palettePool.push(...(r.kmeans?.dominantColors || [])));
+			} else {
+				const useMedianCut = algorithmToggle.checked;
+				allResults.forEach(r => palettePool.push(...((useMedianCut ? r.mediancut : r.kmeans)?.dominantColors || [])));
+			}
+			const common = buildCommonPalette(palettePool, 30);
+			data.batchSummary.commonPalette = common;
             
-            const box1 = { ...initialBox, pixels: boxToSplit.pixels.slice(0, medianIndex) };
-            const box2 = { ...initialBox, pixels: boxToSplit.pixels.slice(medianIndex) };
-            boxes.push(box1, box2);
-        }
+            commonPaletteContainer.classList.remove('hidden');
+			statisticalReportContainer.classList.remove('hidden');
+			generateStatisticalReport(data);
 
-        return boxes.filter(b => b.pixels.length > 0).map(box => {
-            const avgColor = calculateMean(box.pixels);
-            return {
-                rgb: avgColor.map(Math.round),
-                proportion: box.pixels.length / pixels.length
-            };
-        });
-    }
-    // ===== Utility: seeded RNG and hashing =====
-    function mulberry32(seed) {
-      let t = seed >>> 0;
-      return function() {
-        t += 0x6D2B79F5;
-        let r = Math.imul(t ^ t >>> 15, 1 | t);
-        r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
-        return ((r ^ r >>> 14) >>> 0) / 4294967296;
-      };
-    }
+			if (compareMode) {
+                compareReportContainer.classList.remove('hidden');
+				const kStats = aggregateAlgoStats(allResults.map(r => r.kmeans?.metrics).filter(Boolean));
+				const mStats = aggregateAlgoStats(allResults.map(r => r.mediancut?.metrics).filter(Boolean));
+				renderCompareReport(kStats, mStats);
+			}
+		}
 
-    // FNV-1a hash on a subset of data to derive deterministic seed
-    function hashData(data, sampleStep = 17) {
-      let h = 0x811C9DC5;
-      const n = data.length;
-      for (let i = 0; i < n; i += Math.max(1, Math.floor(n / sampleStep))) {
-        const p = data[i];
-        h ^= (p[0] * 31 + p[1] * 17 + p[2]) & 0xFF;
-        h = (h * 0x01000193) >>> 0;
-      }
-      return h >>> 0;
-    }
+		function aggregateAlgoStats(list) {
+			if (list.length === 0) return null;
+			const avg = (arr) => arr.reduce((a,b)=>a+b,0) / arr.length;
+			return {
+				count: list.length,
+				avgDuration: avg(list.map(x => x.durationMs)),
+				avgDistortion: avg(list.map(x => x.distortion)),
+				avgDiversity: avg(list.map(x => x.diversity))
+			};
+		}
 
-    // ===== Core math =====
-    function sqDist(p, q) { // squared Euclidean
-      const dx = p[0]-q[0], dy = p[1]-q[1], dz = p[2]-q[2];
-      return dx*dx + dy*dy + dz*dz;
-    }
-    function weightedMean(points, weights) {
-      let sx=0, sy=0, sz=0, sw=0;
-      for (let i=0;i<points.length;i++){
-        const w = weights ? weights[i] : 1;
-        sx += points[i][0]*w; sy += points[i][1]*w; sz += points[i][2]*w; sw += w;
-      }
-      return sw>0 ? [sx/sw, sy/sw, sz/sw] : [0,0,0];
-    }
-    function clusterWeightedMean(idxList, data, weights) {
-      let sx=0, sy=0, sz=0, sw=0;
-      for (const idx of idxList) {
-        const p = data[idx];
-        const w = weights ? weights[idx] : 1;
-        sx += p[0]*w; sy += p[1]*w; sz += p[2]*w; sw += w;
-      }
-      return sw>0 ? [sx/sw, sy/sw, sz/sw] : null;
-    }
-    function computeInertia(assignments, centroids, data, weights) {
-      let sum = 0;
-      for (let i=0;i<data.length;i++){
-        const c = centroids[assignments[i]];
-        const w = weights ? weights[i] : 1;
-        sum += w * sqDist(data[i], c);
-      }
-      return sum;
-    }
+		function renderCompareReport(kmeansStats, mcStats) {
+			const fmt = (x, n=2) => (x==null?'—':x.toFixed(n));
+			const html = `
+				<div class="grid" style="grid-template-columns:1fr 1fr;gap:1rem;">
+					<div class="bg-gray-50 rounded-md p-3">
+						<div class="font-bold mb-2">K-Means (L*a*b*)</div>
+						<div class="text-sm"><span class="metric-badge">样本: ${kmeansStats?.count ?? 0}</span></div>
+						<div class="text-sm mt-1">平均耗时: ${fmt(kmeansStats?.avgDuration)} ms</div>
+						<div class="text-sm mt-1">平均失真 ΔE76: ${fmt(kmeansStats?.avgDistortion)}</div>
+						<div class="text-sm mt-1">色板分散度: ${fmt(kmeansStats?.avgDiversity)}</div>
+					</div>
+					<div class="bg-gray-50 rounded-md p-3">
+						<div class="font-bold mb-2">Median Cut (L*a*b*)</div>
+						<div class="text-sm"><span class="metric-badge">样本: ${mcStats?.count ?? 0}</span></div>
+						<div class="text-sm mt-1">平均耗时: ${fmt(mcStats?.avgDuration)} ms</div>
+						<div class="text-sm mt-1">平均失真 ΔE76: ${fmt(mcStats?.avgDistortion)}</div>
+						<div class="text-sm mt-1">色板分散度: ${fmt(mcStats?.avgDiversity)}</div>
+					</div>
+				</div>
+				<p class="text-xs text-gray-600 mt-2">说明：ΔE76 越小表示重建误差越小；分散度为色板颜色间平均距离，越大代表覆盖更分散。</p>
+			`;
+			compareReportContainer.querySelector('#compareReport').innerHTML = html;
+		}
+        
+        // --- 结果渲染 ---
+		function displayResults(data, compareMode) {
+			// 共通色板
+            const commonPaletteTarget = commonPaletteContainer.querySelector('#commonPaletteContainer');
+			commonPaletteTarget.innerHTML = '';
+			const groups = groupByHue(data.batchSummary.commonPalette || []);
+			const order = ['red','orange','yellow','green','blue','violet'];
+			order.forEach(cat => {
+                if (!groups[cat] || groups[cat].length === 0) return;
+				const block = document.createElement('div');
+				block.innerHTML = `
+					<div class="text-sm font-semibold mb-2 text-gray-700">${labelOf(cat)}</div>
+					<div class="grid" style="grid-template-columns:repeat(6,minmax(0,1fr));gap:.5rem;">
+						${(groups[cat]||[]).slice(0,6).map(c => `
+							<div class="text-center">
+								<div class="w-full" style="height:2rem;border-radius:.375rem;background:${c.hex};border:1px solid #e5e7eb;"></div>
+								<div class="text-xs mt-1 font-mono">${c.hex}</div>
+							</div>
+						`).join('')}
+					</div>
+				`;
+				commonPaletteTarget.appendChild(block);
+			});
 
-    // ===== Initializations =====
-    function kmeansppInitSeeded(data, k, rng, weights) {
-      const n = data.length;
-      const centroids = [];
-      // pick first centroid: weighted medoid near overall weighted mean
-      const globalMean = weightedMean(data, weights && data.map((_,i)=>weights[i]));
-      let firstIdx = 0, bestD = Infinity;
-      for (let i=0;i<n;i++){ const d = sqDist(data[i], globalMean); if (d < bestD) { bestD = d; firstIdx = i; } }
-      centroids.push(data[firstIdx]);
+			// 单图结果
+			individualResultsContainer.innerHTML = '';
+			data.individualImages.forEach((result, imageIndex) => {
+				const el = document.createElement('div');
+				el.className = 'bg-gray-50 rounded-lg p-4';
 
-      const distances = new Float64Array(n).fill(Infinity);
-      for (let c = 1; c < k; c++) {
-        // update distances to nearest centroid
-        for (let i=0;i<n;i++){
-          const d = sqDist(data[i], centroids[centroids.length-1]);
-          if (d < distances[i]) distances[i] = d;
-        }
-        // choose next centroid proportional to d^2 (k-means++)
-        let total = 0;
-        for (let i=0;i<n;i++){
-          const w = weights ? weights[i] : 1;
-          total += distances[i] * w;
-        }
-        if (total === 0) { // all points identical
-          centroids.push(data[Math.floor(rng()*n)]);
-          continue;
-        }
-        let r = rng() * total, acc = 0, chosen = 0;
-        for (let i=0;i<n;i++){
-          const w = weights ? weights[i] : 1;
-          acc += distances[i]*w;
-          if (acc >= r) { chosen = i; break; }
-        }
-        centroids.push(data[chosen]);
-      }
-      return centroids;
-    }
+				if (result.error) {
+					el.innerHTML = `<h3 class="font-bold text-red-600">${result.name} - 分析失败</h3><p class="text-sm text-gray-600">${result.error}</p>`;
+					individualResultsContainer.appendChild(el);
+					return;
+				}
 
-    function farthestFirstInit(data, k, weights) {
-      const n = data.length;
-      const centroids = [];
-      // first: medoid near global mean
-      const globalMean = weightedMean(data, weights && data.map((_,i)=>weights[i]));
-      let firstIdx = 0, bestD = Infinity;
-      for (let i=0;i<n;i++){ const d = sqDist(data[i], globalMean); if (d < bestD) { bestD = d; firstIdx = i; } }
-      centroids.push(data[firstIdx]);
+				const imgHtml = `<img src="${result.imageDataUrl}" class="rounded-md w-full h-48 object-contain bg-white border" alt="${result.name}" data-image-index="${imageIndex}">`;
 
-      const minDist = new Float64Array(n).fill(Infinity);
-      for (let c = 1; c < k; c++) {
-        for (let i=0;i<n;i++){
-          const d = sqDist(data[i], centroids[centroids.length-1]);
-          if (d < minDist[i]) minDist[i] = d;
-        }
-        // choose farthest point deterministically
-        let farIdx = 0, farVal = -1;
-        for (let i=0;i<n;i++){
-          const val = minDist[i];
-          if (val > farVal) { farVal = val; farIdx = i; }
-        }
-        centroids.push(data[farIdx]);
-      }
-      return centroids;
-    }
+				const onePanel = (algoKey, title) => {
+					const pack = result[algoKey];
+					if (!pack) return '';
+					const colors = pack.dominantColors;
+					return `
+						<div class="bg-white rounded-md p-3 border mt-4">
+							<div class="flex items-center justify-between">
+								<div class="font-semibold">${title}</div>
+								<div>
+									<span class="metric-badge">ΔE:${pack.metrics.distortion.toFixed(2)}</span>
+									<span class="metric-badge">${pack.metrics.durationMs.toFixed(1)}ms</span>
+								</div>
+							</div>
+							<div class="color-info-wrapper">
+								<div class="color-stack-container">
+									${colors.map(c=>{
+										const lum = (c.rgb[0]*0.299+c.rgb[1]*0.587+c.rgb[2]*0.114)/255;
+										return `<div class="color-block" style="background:${c.hex};height:${(c.proportion*100)}%;color:${lum>0.5?'#111':'#fff'};">${(c.proportion*100).toFixed(1)}%</div>`;
+									}).join('')}
+								</div>
+								<ul class="color-details-list">
+									${colors.map((c, idx)=>{
+										const hsv = rgbToHsv(c.rgb[0], c.rgb[1], c.rgb[2]);
+										return `<li>
+											<div class="color-box" style="background:${c.hex};"></div>
+											<div class="w-full">
+												<div class="flex justify-between items-center text-sm">
+													<span class="font-mono font-medium text-gray-800">${c.hex}</span>
+													<button class="apply-tone-btn" data-image-index="${imageIndex}" data-color-index="${idx}" data-algo="${algoKey}">应用色调</button>
+												</div>
+												<div class="flex justify-between text-xs text-gray-600 mt-1">
+													<span>占比: ${(c.proportion*100).toFixed(1)}%</span>
+													<span>H:${hsv.h.toFixed(0)}° S:${(hsv.s*100).toFixed(0)}% V:${(hsv.v*100).toFixed(0)}%</span>
+												</div>
+											</div>
+										</li>`;
+									}).join('')}
+								</ul>
+							</div>
+						</div>
+					`;
+				};
 
-    // ===== Main k-means =====
-    function kmeans(data, k, opts = {}) {
-      if (k === 0 || data.length < k) return { centroids: [], assignments: [] };
-      const {
-        maxIter = 100,
-        tol = 1e-4,           // relative inertia improvement threshold
-        nInit = 1,            // multiple restarts for quality; keep seed deterministic for稳定性
-        seed = null,          // if null, derive from data hash
-        init = 'kmeans++',    // 'kmeans++' | 'farthest'
-        weights = null,       // optional weights per-point
-        sortStrategy = 'proportion' // 'proportion' | 'hue' | 'lightness' (若有这些属性)
-      } = opts;
+				let panels = '';
+				if (compareMode) {
+					panels = `<div class="compare-row">${onePanel('kmeans','K-Means (L*a*b*)')}${onePanel('mediancut','Median Cut (L*a*b*)')}</div>`;
+				} else {
+					panels = !algorithmToggle.checked ? onePanel('kmeans','K-Means (L*a*b*)') : onePanel('mediancut','Median Cut (L*a*b*)');
+				}
 
-      const baseSeed = seed != null ? seed >>> 0 : hashData(data);
-      let best = null, bestInertia = Infinity, bestAssignments = null, bestCentroids = null;
+				const wheelId = `wheel-${imageIndex}`;
+				el.innerHTML = `
+					<h3 class="font-bold mb-2">${result.name}</h3>
+					<div class="grid" style="grid-template-columns:1.2fr 1fr;gap:1rem;">
+						<div class="analysis-panel-container">${imgHtml}${panels}</div>
+						<div>
+							<h4 class="font-semibold mb-2 text-center">色轮分析</h4>
+							<div class="color-wheel-container"><canvas id="${wheelId}" class="color-wheel-canvas"></canvas></div>
+						</div>
+					</div>
+				`;
+                
+                // Append B&W analysis if it exists
+                if (result.bwAnalysis) {
+                    const bwContainer = renderBWAnalysis(result, imageIndex);
+                    el.querySelector('.analysis-panel-container').appendChild(bwContainer);
+                }
 
-      for (let run = 0; run < Math.max(1, nInit); run++) {
-        const rng = mulberry32((baseSeed + run) >>> 0);
-        let centroids = (init === 'farthest')
-          ? farthestFirstInit(data, k, weights)
-          : kmeansppInitSeeded(data, k, rng, weights);
+				individualResultsContainer.appendChild(el);
 
-        let assignments = new Array(data.length).fill(0);
-        let inertiaPrev = Infinity;
+				const colorsForWheel = compareMode
+					? (result.kmeans?.dominantColors || result.mediancut?.dominantColors || [])
+					: (!algorithmToggle.checked ? (result.kmeans?.dominantColors||[]) : (result.mediancut?.dominantColors||[]));
+				setTimeout(()=> drawColorWheel(colorsForWheel, wheelId), 0);
+			});
 
-        for (let iter = 0; iter < maxIter; iter++) {
-          // Assignment step
-          for (let i=0;i<data.length;i++){
-            let minD = Infinity, minIdx = 0;
-            for (let c=0;c<centroids.length;c++){
-              const d = sqDist(data[i], centroids[c]);
-              if (d < minD) { minD = d; minIdx = c; }
+			resultsContainer.classList.remove('hidden');
+		}
+
+		// --- 提取像素 ---
+		function extractPixels(img, { maxDim = 150, alphaThreshold = 32 } = {}) {
+			let { width, height } = img;
+			if (width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+			else if (height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+			const canvas = document.createElement('canvas');
+			canvas.width = width; canvas.height = height;
+			const ctx = canvas.getContext('2d', { willReadFrequently: true });
+			ctx.imageSmoothingEnabled = false; ctx.imageSmoothingQuality = 'low';
+			ctx.drawImage(img, 0, 0, width, height);
+			const raw = ctx.getImageData(0, 0, width, height).data;
+			const pixels = [];
+			for (let i = 0; i < raw.length; i += 4) {
+				const a = raw[i+3];
+				if (a < alphaThreshold) continue;
+				pixels.push([raw[i], raw[i+1], raw[i+2]]);
+			}
+			return { pixels, width, height };
+		}
+        
+        // --- START B&W ANALYSIS FUNCTIONS ---
+
+        function analyzeBlackWhiteGray(pixels, width, height) {
+			const grayscale = pixels.map(rgb => {
+				const [r, g, b] = rgb;
+				return Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+			});
+
+			const min = grayscale.reduce((a, b) => Math.min(a, b), Infinity);
+			const max = grayscale.reduce((a, b) => Math.max(a, b), -Infinity);
+			const range = max - min;
+			
+			const mean = grayscale.reduce((sum, val) => sum + val, 0) / grayscale.length;
+			const variance = grayscale.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / grayscale.length;
+			const stdDev = Math.sqrt(variance);
+
+			const histogram = new Array(256).fill(0);
+			grayscale.forEach(val => histogram[val]++);
+			
+			const contrastIndex = (stdDev / 128) * 100;
+			const levels = histogram.filter(count => count > 0).length;
+			const richnessIndex = (levels / 256) * 100;
+
+			const nineGrid = [];
+			const cellHeight = Math.floor(height / 3);
+            const cellWidth = Math.floor(width / 3);
+			for (let row = 0; row < 3; row++) {
+				for (let col = 0; col < 3; col++) {
+					let sum = 0, count = 0;
+                    const startY = row * cellHeight;
+                    const endY = (row + 1) * cellHeight;
+                    const startX = col * cellWidth;
+                    const endX = (col + 1) * cellWidth;
+					for (let y = startY; y < endY; y++) {
+						for (let x = startX; x < endX; x++) {
+							const index = y * width + x;
+							if (index < grayscale.length) {
+								sum += grayscale[index];
+								count++;
+							}
+						}
+					}
+					nineGrid.push(count > 0 ? Math.round(sum / count) : 0);
+				}
+			}
+
+			const suggestions = generateBWSuggestions(contrastIndex, richnessIndex, range, nineGrid);
+
+			return {
+				grayscale,
+				width,
+				height,
+				statistics: {
+					min, max, range,
+					mean: Math.round(mean),
+					stdDev: Math.round(stdDev),
+					contrastIndex: Math.round(contrastIndex),
+					richnessIndex: Math.round(richnessIndex)
+				},
+				histogram, nineGrid, suggestions
+			};
+		}
+
+		function generateBWSuggestions(contrastIndex, richnessIndex, range, nineGrid) {
+			const suggestions = [];
+			if (contrastIndex < 30) {
+				suggestions.push({ icon: '⚠️', text: '对比度较低 (偏灰)，画面可能缺乏层次感和视觉焦点。' });
+			} else if (contrastIndex > 70) {
+				suggestions.push({ icon: '💡', text: '对比度非常高，画面具有强烈的视觉冲击力。' });
+			} else {
+                suggestions.push({ icon: '✅', text: '对比度适中，画面关系明确。' });
             }
-            assignments[i] = minIdx;
-          }
-
-          // Update step
-          const clusters = Array.from({length:k}, () => []);
-          for (let i=0;i<data.length;i++) clusters[assignments[i]].push(i);
-
-          // Handle empty clusters: reassign to worst-error point
-          for (let c=0;c<k;c++){
-            if (clusters[c].length === 0) {
-              // find point with largest distance to its centroid
-              let worstIdx = 0, worstD = -1;
-              for (let i=0;i<data.length;i++){
-                const d = sqDist(data[i], centroids[assignments[i]]);
-                if (d > worstD) { worstD = d; worstIdx = i; }
-              }
-              clusters[c] = [worstIdx];
-              assignments[worstIdx] = c;
+			if (richnessIndex < 25) {
+				suggestions.push({ icon: '⚠️', text: '灰度层次较少，可能导致色调过渡生硬，建议增加中间调。' });
+			} else if (richnessIndex > 60) {
+				suggestions.push({ icon: '✅', text: '灰度层次丰富，画面细节和质感表现良好。' });
+			}
+			if (range < 128) {
+				suggestions.push({ icon: '⚠️', text: '明度范围较窄，缺少纯黑或纯白，画面可能显得平淡。' });
+			}
+            const centerAvg = nineGrid[4];
+			const cornerAvg = (nineGrid[0] + nineGrid[2] + nineGrid[6] + nineGrid[8]) / 4;
+            if (Math.abs(centerAvg - cornerAvg) > 60) {
+				suggestions.push({ icon: '💡', text: '中心与边缘明度差异较大，形成了视觉引导，请评估是否符合构图意图。' });
+			}
+            if(suggestions.length === 0) {
+                suggestions.push({ icon: '🎉', text: '各项指标均衡，黑白灰关系处理得当！' });
             }
-          }
+			return suggestions;
+		}
 
-          // Recompute centroids
-          let moved = 0;
-          for (let c=0;c<k;c++){
-            const mean = clusterWeightedMean(clusters[c], data, weights);
-            if (mean) {
-              moved += sqDist(mean, centroids[c]);
-              centroids[c] = mean;
-            }
-          }
-
-          // Check convergence by inertia improvement
-          const inertia = computeInertia(assignments, centroids, data, weights);
-          const relGain = (inertiaPrev - inertia) / Math.max(1, inertiaPrev);
-          inertiaPrev = inertia;
-          if (relGain >= 0 && relGain < tol) break;
-          // Optional safeguard: if centroids barely move
-          if (moved < 1e-10) break;
-        } // end iterations
-
-        const inertiaFinal = computeInertia(assignments, centroids, data, weights);
-        if (inertiaFinal < bestInertia) {
-          bestInertia = inertiaFinal;
-          bestAssignments = assignments;
-          bestCentroids = centroids;
-          best = { centroids: centroids.map(c => c.slice()), assignments: assignments.slice(), inertia: inertiaFinal };
-        }
-      }
-
-      // Stable ordering: sort by cluster size (proportion) descending
-      const counts = new Array(k).fill(0);
-      for (const a of bestAssignments) counts[a]++;
-      const order = [...Array(k).keys()].sort((i,j)=> counts[j]-counts[i]);
-      const remap = new Array(k);
-      order.forEach((cid, newIdx)=> remap[cid] = newIdx);
-
-      const centroidsSorted = order.map(idx => bestCentroids[idx]);
-      const assignmentsRemapped = bestAssignments.map(a => remap[a]);
-
-      return { centroids: centroidsSorted, assignments: assignmentsRemapped };
-    }
-
-    function kmeans(data, k) {
-      if (k === 0 || data.length < k) return { centroids: [], assignments: [] };
-      let centroids = kmeansppInit(data, k);
-      let assignments = [];
-      for (let iter = 0; iter < 10; iter++) {
-        assignments = data.map(point => {
-          let minDistance = Infinity, closestCentroidIndex = 0;
-          centroids.forEach((centroid, index) => {
-            const distance = euclideanDistance(point, centroid);
-            if (distance < minDistance) { minDistance = distance; closestCentroidIndex = index; }
-          });
-          return closestCentroidIndex;
-        });
-        const pointsInCluster = Array.from({ length: k }, () => []);
-        assignments.forEach((assignment, i) => { pointsInCluster[assignment].push(data[i]); });
-        let changed = false;
-        for (let i = 0; i < k; i++) {
-          if (pointsInCluster[i].length > 0) {
-            const newCentroid = calculateMean(pointsInCluster[i]);
-            if (!centroids[i] || euclideanDistance(newCentroid, centroids[i]) > 1) { changed = true; }
-            centroids[i] = newCentroid;
-          }
-        }
-        if (!changed) break;
-      }
-      return { centroids, assignments };
-    }
-    function kmeansppInit(data, k) { /* ... implementation unchanged ... */ return []; }
-    function euclideanDistance(p1, p2) { /* ... implementation unchanged ... */ return 0; }
-    function calculateMean(points) { const sum = points.reduce((acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + p[2]], [0, 0, 0]); return sum.map(v => v / points.length); }
-    // Fill in unchanged kmeans helper functions for completeness
-    kmeansppInit = function(data, k) {
-        const centroids = [data[Math.floor(Math.random() * data.length)]];
-        const distances = new Array(data.length).fill(Infinity);
-        for (let i = 1; i < k; i++) {
-            let totalDistance = 0;
-            for (let j = 0; j < data.length; j++) {
-                const dist = euclideanDistance(data[j], centroids[centroids.length - 1]);
-                distances[j] = Math.min(distances[j], dist);
-            }
-            const distSq = distances.map(d => d * d);
-            totalDistance = distSq.reduce((a, b) => a + b, 0);
-            const rand = Math.random() * totalDistance;
-            let sum = 0;
-            for (let j = 0; j < distSq.length; j++) {
-                sum += distSq[j];
-                if (sum > rand) { centroids.push(data[j]); break; }
-            }
-        }
-        return centroids;
-    };
-    euclideanDistance = function(p1, p2) { return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2) + Math.pow(p1[2] - p2[2], 2)); };
-
-    // --- Color Utility Functions ---
-    function rgbToHex(r, g, b) { return "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join(''); }
-    function rgbToHsv(r, g, b) { r /= 255, g /= 255, b /= 255; let max = Math.max(r, g, b), min = Math.min(r, g, b); let h, s, v = max; let d = max - min; s = max == 0 ? 0 : d / max; if (max == min) { h = 0; } else { switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h /= 6; } return { h: h * 360, s: s, v: v }; }
-    
-    // --- Batch Analysis ---
-    function findCommonColors(allResults, numCommonColors) {
-      const allDominantColors = allResults.flatMap(res => res.dominantColors || []);
-      if (allDominantColors.length === 0) return [];
-      const archetypalK = Math.min(numCommonColors, allDominantColors.length);
-      const { centroids: archetypes, assignments } = kmeans(allDominantColors.map(c => c.rgb), archetypalK);
-      const archetypeScores = new Array(archetypalK).fill(0);
-      assignments.forEach((assignment, index) => {
-        if(allDominantColors[index]) archetypeScores[assignment] += allDominantColors[index].proportion;
-      });
-      return archetypes.map((archetype, index) => ({
-        rgb: archetype.map(Math.round),
-        hex: rgbToHex(archetype[0], archetype[1], archetype[2]),
-        score: archetypeScores[index]
-      })).filter(c => c.score > 0).sort((a, b) => b.score - a.score);
-    }
-    
-    // --- Display Logic ---
-    function displayResults(data) {
-      // Common Palette
-      Object.values(paletteContainers).forEach(pc => pc.innerHTML = '');
-      data.batchSummary.commonPalette.forEach(color => {
-        const item = document.createElement('div');
-        item.className = 'text-center';
-        item.innerHTML = `<div class="w-full h-12 rounded-md shadow" style="background-color: ${color.hex};"></div><div class="text-xs mt-1 font-mono">${color.hex}</div>`;
-        const hsv = rgbToHsv(color.rgb[0], color.rgb[1], color.rgb[2]);
-        const category = getHueCategory(hsv);
-        if (paletteContainers[category]) {
-            paletteContainers[category].appendChild(item);
-        }
-      });
-      
-      // Individual Results
-      individualResultsContainer.innerHTML = '';
-      data.individualImages.forEach((result, index) => {
-        const resultElement = document.createElement('div');
-        resultElement.className = 'border rounded-lg p-4';
-        const canvasId = `wheel-${index}`;
-        if (result.error) {
-          resultElement.innerHTML = `<h3 class="font-bold text-red-600">${result.name} - 分析失败</h3><p class="text-sm text-gray-600">${result.error}</p>`;
-        } else {
-          const colorInfoHtml = `...`; // Placeholder for brevity, logic is unchanged
-          resultElement.innerHTML = `
-            <h3 class="font-bold mb-2">${result.name}</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <img src="${result.imageDataUrl}" class="rounded-md w-full h-48 object-contain bg-gray-100" alt="${result.name}">
-                <div class="color-info-wrapper">
-                    <div class="color-stack-container">
-                        ${result.dominantColors.map(c => {
-                            const lum = (c.rgb[0] * 0.299 + c.rgb[1] * 0.587 + c.rgb[2] * 0.114) / 255;
-                            return `<div class="color-block" style="background-color: ${c.hex}; height: ${(c.proportion * 100)}%; color: ${lum > 0.5 ? 'black':'white'};" title="${c.hex}, ${(c.proportion * 100).toFixed(1)}%">${(c.proportion * 100).toFixed(1)}%</div>`;
-                        }).join('')}
+        function renderBWAnalysis(result, index) {
+            const bwData = result.bwAnalysis;
+            const container = document.createElement('div');
+            container.className = 'bw-analysis-container';
+            container.innerHTML = `
+                <h4>黑白灰关系分析</h4>
+                <div class="bw-image-container">
+                    <div class="text-center">
+                        <div class="bw-image-placeholder" id="bw-canvas-container-${index}"></div>
+                        <p class="text-xs text-gray-600 mt-1">灰度图</p>
                     </div>
-                    <ul class="color-details-list">
-                        ${result.dominantColors.map(c => {
-                            const hsv = rgbToHsv(c.rgb[0], c.rgb[1], c.rgb[2]);
-                            return `<li><div class="color-box" style="background-color: ${c.hex};"></div><div class="w-full"><div class="flex justify-between text-sm"><span class="font-mono font-medium text-gray-800">${c.hex}</span><span class="font-semibold text-blue-600">${(c.proportion * 100).toFixed(1)}%</span></div><div class="flex justify-between text-xs text-gray-500 mt-1"><span>H:${hsv.h.toFixed(0)}°</span><span>S:${(hsv.s * 100).toFixed(0)}%</span><span>V:${(hsv.v * 100).toFixed(0)}%</span></div></div></li>`;
-                        }).join('')}
-                    </ul>
+                     <div>
+                        <p class="font-semibold text-sm mb-2 text-center">九宫格平均明度</p>
+                        <div class="nine-grid-container" id="nine-grid-container-${index}"></div>
+                    </div>
                 </div>
-              </div>
-              <div>
-                <h4 class="font-semibold mb-2 text-center">色轮分析 (六色)</h4>
-                <div class="color-wheel-container">
-                  <canvas id="${canvasId}" class="color-wheel-canvas"></canvas>
+                <div>
+                    <p class="font-semibold text-sm mb-2 text-center">明度分布直方图</p>
+                    <div class="histogram-container" id="histogram-container-${index}"></div>
                 </div>
-              </div>
-            </div>`;
-        }
-        individualResultsContainer.appendChild(resultElement);
-        if (!result.error) {
-          setTimeout(() => drawColorWheel(result.dominantColors, canvasId), 0);
-        }
-      });
-      resultsContainer.classList.remove('hidden');
-    }
+                <div class="mt-4">
+                     <p class="font-semibold text-sm mb-2">核心指标</p>
+                     <div class="bw-metrics" id="bw-metrics-${index}"></div>
+                </div>
+                <div class="mt-4">
+                     <p class="font-semibold text-sm mb-2">分析与建议</p>
+                     <div class="bw-suggestions" id="bw-suggestions-${index}"></div>
+                </div>`;
 
-    // --- Drawing and Categorization ---
-    function getHueCategory(hsv) {
-        const { h, s, v } = hsv;
-        if (s < 0.1 || v < 0.15) return 'neutral';
-        if (h >= 330 || h < 15) return 'red';
-        if (h >= 15 && h < 45) return 'orange';
-        if (h >= 45 && h < 75) return 'yellow';
-        if (h >= 75 && h < 165) return 'green';
-        if (h >= 165 && h < 255) return 'blue';
-        if (h >= 255 && h < 330) return 'violet';
-        return 'neutral';
-    }
-
-    function drawColorWheel(colors, canvasId) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width; canvas.height = rect.height;
-        const ctx = canvas.getContext('2d');
-        const { width, height } = canvas;
-        const centerX = width / 2, centerY = height / 2;
-        const maxRadius = Math.min(centerX, centerY) * 0.9;
-        ctx.clearRect(0, 0, width, height);
-
-        for (let i = 0; i < 360; i += 1) {
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            const angle1 = (i - 90) * Math.PI / 180;
-            const angle2 = (i + 1 - 90) * Math.PI / 180;
-            ctx.arc(centerX, centerY, maxRadius, angle1, angle2);
-            ctx.closePath();
-            ctx.fillStyle = `hsl(${i}, 80%, 60%)`;
-            ctx.fill();
+            setTimeout(() => {
+                renderGrayscaleImage(bwData, container.querySelector(`#bw-canvas-container-${index}`));
+                renderHistogram(bwData.histogram, container.querySelector(`#histogram-container-${index}`));
+                renderNineGrid(bwData.nineGrid, container.querySelector(`#nine-grid-container-${index}`));
+                renderMetrics(bwData.statistics, container.querySelector(`#bw-metrics-${index}`));
+                renderSuggestions(bwData.suggestions, container.querySelector(`#bw-suggestions-${index}`));
+            }, 0);
+            return container;
         }
 
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, maxRadius * 0.2, 0, 2 * Math.PI);
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--gray-50').trim() || '#f8fafc';
-        ctx.fill();
-        
-        // Lines for 6 categories
-        const sections = [15, 45, 75, 165, 255, 330];
-        sections.forEach(angle => {
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            const angleRad = (angle - 90) * Math.PI / 180;
-            ctx.lineTo(centerX + maxRadius * Math.cos(angleRad), centerY + maxRadius * Math.sin(angleRad));
-            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        });
-
-        const points = colors.map(color => {
-            const hsv = rgbToHsv(color.rgb[0], color.rgb[1], color.rgb[2]);
-            return {
-                x: centerX + (maxRadius*0.2 + hsv.s * maxRadius*0.8) * Math.cos((hsv.h - 90) * Math.PI / 180),
-                y: centerY + (maxRadius*0.2 + hsv.s * maxRadius*0.8) * Math.sin((hsv.h - 90) * Math.PI / 180),
-                size: Math.max(4, color.proportion * (width / 7.5)),
-                fill: color.hex,
-            };
-        });
-        
-        points.forEach(p => { /* ... drawing points ... */ });
-        // Redraw points for brevity
-        points.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, 2 * Math.PI);
-            ctx.fillStyle = p.fill;
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-        });
-    }
-    
-    // --- New Statistical Report Generation ---
-    function generateStatisticalReport(data) {
-        const colors = data.batchSummary.commonPalette;
-        if (!colors || colors.length === 0) {
-            statisticalReportContainer.innerHTML = '<p>无足够数据生成报告。</p>';
-            return;
-        }
-
-        let html = '';
-
-        // 1. Color Temperature
-        const temp = { warm: 0, cool: 0 };
-        const hsvs = colors.map(c => ({ ...c, hsv: rgbToHsv(c.rgb[0], c.rgb[1], c.rgb[2]) }));
-        hsvs.forEach(c => {
-            const hue = c.hsv.h;
-            if ((hue >= 0 && hue < 75) || hue >= 330) temp.warm += c.score;
-            else if (hue >= 75 && hue < 255) temp.cool += c.score;
-        });
-        const totalTemp = temp.warm + temp.cool;
-        const warmPercent = totalTemp > 0 ? (temp.warm / totalTemp * 100) : 50;
-        html += `<div class="analysis-section"><h4>色温分析 (Warm/Cool Tones)</h4><p>评估画面整体的冷暖倾向。</p><div class="bar-chart"><div class="bar warm-bar" style="width:${warmPercent.toFixed(2)}%">暖 ${warmPercent.toFixed(0)}%</div><div class="bar cool-bar" style="width:${(100 - warmPercent).toFixed(2)}%">冷 ${(100 - warmPercent).toFixed(0)}%</div></div></div>`;
-        
-        // 2. Saturation Analysis
-        const sat = { low: 0, mid: 0, high: 0 };
-        hsvs.forEach(c => {
-            if (c.hsv.s < 0.25) sat.low += c.score;
-            else if (c.hsv.s < 0.7) sat.mid += c.score;
-            else sat.high += c.score;
-        });
-        const totalSat = sat.low + sat.mid + sat.high;
-        html += `<div class="analysis-section"><h4>饱和度分析 (Saturation)</h4><p>评估色彩的鲜艳程度。低饱和度色彩更接近灰色，高饱和度色彩更纯粹、鲜艳。</p><ul class="list-disc list-inside"><li>低饱和度 (灰调): ${(totalSat > 0 ? sat.low / totalSat * 100 : 0).toFixed(1)}%</li><li>中等饱和度: ${(totalSat > 0 ? sat.mid / totalSat * 100 : 0).toFixed(1)}%</li><li>高饱和度 (鲜艳): ${(totalSat > 0 ? sat.high / totalSat * 100 : 0).toFixed(1)}%</li></ul></div>`;
-
-        // 3. Contrast Analysis
-        const values = hsvs.map(c => c.hsv.v);
-        const contrast = Math.max(...values) - Math.min(...values);
-        let contrastLevel = '中';
-        if (contrast > 0.7) contrastLevel = '高'; else if (contrast < 0.3) contrastLevel = '低';
-        html += `<div class="analysis-section"><h4>对比度分析 (Contrast)</h4><p>评估画面明暗反差的强烈程度。</p><p>明度对比度级别: <strong>${contrastLevel}</strong> (范围: ${contrast.toFixed(2)})</p></div>`;
-
-        // 4. Harmony Analysis
-        const harmony = analyzeHarmony(hsvs);
-        let harmonyHtml = `<div class="analysis-section"><h4>色彩和谐分析 (Color Harmony)</h4><p>检测主色调之间是否存在经典的配色关系。</p>`;
-        if (harmony.name !== '无明显和谐关系') {
-            harmonyHtml += `<p>检测到主要的色彩关系为: <span class="harmony-badge harmony-${harmony.type}">${harmony.name}</span></p><p>${harmony.description}</p>`;
-        } else {
-            harmonyHtml += `<p>${harmony.description}</p>`;
-        }
-        html += harmonyHtml + `</div>`;
-
-        statisticalReportContainer.innerHTML = html;
-    }
-
-    function analyzeHarmony(colors) {
-        const hues = colors.slice(0, 5).map(c => c.hsv.h); // Analyze top 5 colors
-        const hueDiff = (a, b) => { let d = Math.abs(a - b); return d > 180 ? 360 - d : d; };
-
-        // Check for Analogous
-        let maxAnalogousGroup = 0;
-        for(let i = 0; i < hues.length; i++) {
-            let group = 1;
-            for(let j = 0; j < hues.length; j++) {
-                if(i === j) continue;
-                if(hueDiff(hues[i], hues[j]) < 45) group++;
+        function renderGrayscaleImage(bwData, container) {
+            const canvas = document.createElement('canvas');
+            canvas.className = 'bw-image';
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = bwData.width; canvas.height = bwData.height;
+            const imageData = ctx.createImageData(bwData.width, bwData.height);
+            const data = imageData.data;
+            for (let i = 0; i < bwData.grayscale.length; i++) {
+                const g = bwData.grayscale[i];
+                data[i * 4] = g; data[i * 4 + 1] = g; data[i * 4 + 2] = g; data[i * 4 + 3] = 255;
             }
-            if(group > maxAnalogousGroup) maxAnalogousGroup = group;
+            ctx.putImageData(imageData, 0, 0);
+            container.innerHTML = ''; container.appendChild(canvas);
         }
-        if (maxAnalogousGroup >= 3) return {
-            name: '类似色', type: 'analogous', description: '画面主要由色轮上彼此相邻的颜色构成，营造了和谐、统一的视觉感受。'
-        };
 
-        // Check for Complementary
-        for(let i = 0; i < hues.length; i++) {
-            for(let j = i + 1; j < hues.length; j++) {
-                if(hueDiff(hues[i], hues[j]) > 150 && hueDiff(hues[i], hues[j]) < 210) return {
-                    name: '互补色', type: 'complementary', description: '画面中包含了色轮上相对的颜色，形成了强烈的视觉对比，充满活力和冲击力。'
-                };
+        function renderHistogram(histogramData, container) {
+            container.innerHTML = '';
+            const maxCount = Math.max(...histogramData);
+            for (let i = 0; i < 256; i+=2) {
+                const bar = document.createElement('div'); bar.className = 'histogram-bar';
+                const height = maxCount > 0 ? (histogramData[i] / maxCount) * 100 : 0;
+                bar.style.height = `${height}%`; bar.title = `明度 ${i}: ${histogramData[i]} 像素`;
+                container.appendChild(bar);
             }
         }
 
-        // Check for Triadic
-        const findTriad = (h) => [(h + 120) % 360, (h + 240) % 360];
-        for(let i = 0; i < hues.length; i++) {
-            const triad = findTriad(hues[i]);
-            const hasPartner1 = hues.some(h => hueDiff(h, triad[0]) < 30);
-            const hasPartner2 = hues.some(h => hueDiff(h, triad[1]) < 30);
-            if(hasPartner1 && hasPartner2) return {
-                name: '三色组', type: 'triadic', description: '画面色彩大致构成一个等边三角形，色彩丰富的同时保持了视觉平衡。'
+        function renderNineGrid(nineGridData, container) {
+            container.innerHTML = '';
+            nineGridData.forEach(value => {
+                const cell = document.createElement('div'); cell.className = 'nine-grid-cell';
+                cell.textContent = value; cell.style.backgroundColor = `rgb(${value}, ${value}, ${value})`;
+                cell.style.color = value < 128 ? 'white' : 'black'; cell.title = `平均明度: ${value}`;
+                container.appendChild(cell);
+            });
+        }
+        
+        function renderMetrics(stats, container) {
+            container.innerHTML = '';
+            const metrics = {
+                '对比度': stats.contrastIndex, '丰富度': stats.richnessIndex, '均值': stats.mean,
+                '标准差': stats.stdDev, '最暗': stats.min, '最亮': stats.max,
             };
+            for (const label in metrics) {
+                const value = metrics[label];
+                const metricEl = document.createElement('div'); metricEl.className = 'bw-metric';
+                metricEl.innerHTML = `<div class="bw-metric-value">${value}</div><div class="bw-metric-label">${label}</div>`;
+                container.appendChild(metricEl);
+            }
         }
 
-        return { name: '无明显和谐关系', description: '画面的色彩搭配较为复杂或自由，未检测到经典的和谐配色模式。' };
-    }
-</script>
+        function renderSuggestions(suggestions, container) {
+            container.innerHTML = '';
+            if (suggestions.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-600">暂无特别建议。</p>'; return;
+            }
+            suggestions.forEach(sugg => {
+                const suggEl = document.createElement('div'); suggEl.className = 'bw-suggestion-item';
+                suggEl.innerHTML = `<span class="bw-suggestion-icon">${sugg.icon}</span><p class="bw-suggestion-text">${sugg.text}</p>`;
+                container.appendChild(suggEl);
+            });
+        }
+        // --- END B&W ANALYSIS FUNCTIONS ---
+
+		// --- 调色（单色调映射） ---
+		function rgbToHex(r,g,b){ return "#" + [r,g,b].map(x=>Math.round(x).toString(16).padStart(2,'0')).join(''); }
+		function rgbToHsv(r,g,b){ r/=255; g/=255; b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,v=max; const d=max-min; s=max===0?0:d/max; if(max===min) h=0; else { switch(max){ case r:h=(g-b)/d+(g<b?6:0);break; case g:h=(b-r)/d+2;break; case b:h=(r-g)/d+4;break; } h/=6; } return {h:h*360,s,v}; }
+		function hsvToRgb(h,s,v){ let r,g,b; let i = Math.floor(h/60); let f=h/60 - i; let p=v*(1-s), q=v*(1-f*s), t=v*(1-(1-f)*s); switch(i%6){case 0:r=v;g=t;b=p;break;case 1:r=q;g=v;b=p;break;case 2:r=p;g=v;b=t;break;case 3:r=p;g=q;b=v;break;case 4:r=t;g=p;b=v;break;case 5:r=v;g=p;b=q;break;} return [Math.round(r*255),Math.round(g*255),Math.round(b*255)]; }
+		async function applyMonochromaticTone(originalImage, targetColor){
+			const tempCanvas = document.createElement('canvas');
+			const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+			tempCanvas.width = originalImage.naturalWidth;
+			tempCanvas.height = originalImage.naturalHeight;
+			tempCtx.drawImage(originalImage, 0, 0);
+			const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+			const data = imageData.data;
+			const targetHsv = rgbToHsv(targetColor.rgb[0], targetColor.rgb[1], targetColor.rgb[2]);
+			for (let i=0;i<data.length;i+=4){
+				const oHsv = rgbToHsv(data[i], data[i+1], data[i+2]);
+				const [nr,ng,nb] = hsvToRgb(targetHsv.h, targetHsv.s, oHsv.v);
+				data[i]=nr; data[i+1]=ng; data[i+2]=nb;
+			}
+			modalCanvas.width = tempCanvas.width;
+			modalCanvas.height = tempCanvas.height;
+			const modalCtx = modalCanvas.getContext('2d');
+			modalCtx.putImageData(imageData, 0, 0);
+		}
+
+		// --- 颜色空间与 ΔE ---
+		function clamp01(x){ return Math.min(1, Math.max(0, x)); }
+		function srgbToLinear(u){ u/=255; return u<=0.04045? u/12.92 : Math.pow((u+0.055)/1.055, 2.4); }
+		function linearToSrgb(u){ return Math.round(255 * (u<=0.0031308 ? 12.92*u : 1.055*Math.pow(u,1/2.4)-0.055)); }
+		function rgbToXyz([r,g,b]){ const R=srgbToLinear(r), G=srgbToLinear(g), B=srgbToLinear(b); const x=0.4124564*R+0.3575761*G+0.1804375*B, y=0.2126729*R+0.7151522*G+0.0721750*B, z=0.0193339*R+0.1191920*G+0.9503041*B; return [x,y,z]; }
+		function xyzToRgb([x,y,z]){ const R=3.2404542*x-1.5371385*y-0.4985314*z, G=-0.9692660*x+1.8760108*y+0.0415560*z, B=0.0556434*x-0.2040259*y+1.0572252*z; return [linearToSrgb(clamp01(R)), linearToSrgb(clamp01(G)), linearToSrgb(clamp01(B))]; }
+		function fLab(t){ const d=6/29; return t>Math.pow(d,3)? Math.cbrt(t) : (t/(3*d*d)+4/29); }
+		function finvLab(t){ const d=6/29; return t>d? t*t*t : 3*d*d*(t-4/29); }
+		function rgbToLab(rgb){ const [x,y,z]=rgbToXyz(rgb); const Xn=0.95047, Yn=1.00000, Zn=1.08883; const fx=fLab(x/Xn), fy=fLab(y/Yn), fz=fLab(z/Zn); const L=116*fy-16, a=500*(fx-fy), b=200*(fy-fz); return [L,a,b]; }
+		function labToRgb([L,a,b]){ const fy=(L+16)/116, fx=fy+a/500, fz=fy-b/200; const Xn=0.95047, Yn=1.00000, Zn=1.08883; const x=Xn*finvLab(fx), y=Yn*finvLab(fy), z=Zn*finvLab(fz); return xyzToRgb([x,y,z]); }
+		function deltaE76(lab1, lab2){ const dL=lab1[0]-lab2[0], da=lab1[1]-lab2[1], db=lab1[2]-lab2[2]; return Math.sqrt(dL*dL+da*da+db*db); }
+
+		// --- KMeans（L*a*b*） ---
+		function hashData(data, step=17){ let h=0x811C9DC5>>>0; const n=data.length; for(let i=0;i<n;i+=Math.max(1, Math.floor(n/step))){ const p=data[i]; h ^= ((p[0]*31 + p[1]*17 + p[2]) & 0xFF); h = (h * 0x01000193) >>> 0; } return h>>>0; }
+		function mulberry32(seed){ let t=seed>>>0; return function(){ t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14)>>>0)/4294967296; }; }
+		function sqDist3(p,q){ const dx=p[0]-q[0], dy=p[1]-q[1], dz=p[2]-q[2]; return dx*dx+dy*dy+dz*dz; }
+		function weightedMean(idxList, data){ let sx=0,sy=0,sz=0; const n=idxList.length; for(const idx of idxList){ const p=data[idx]; sx+=p[0]; sy+=p[1]; sz+=p[2]; } return n? [sx/n, sy/n, sz/n] : null; }
+		function computeInertia(assign, cents, data){ let sum=0; for(let i=0;i<data.length;i++){ sum += sqDist3(data[i], cents[assign[i]]); } return sum; }
+		function farthestFirstInit(data,k){ const n=data.length; const centroids=[];
+			let mx=0,my=0,mz=0; for(const p of data){ mx+=p[0]; my+=p[1]; mz+=p[2]; } const mean=[mx/n,my/n,mz/n];
+			let first=0, best=Infinity; for(let i=0;i<n;i++){ const d=sqDist3(data[i],mean); if(d<best){best=d; first=i;} }
+			centroids.push(data[first]);
+			const minDist=new Float64Array(n).fill(Infinity);
+			for(let c=1;c<k;c++){ for(let i=0;i<n;i++){ const d=sqDist3(data[i],centroids[centroids.length-1]); if(d<minDist[i]) minDist[i]=d; }
+				let farIdx=0, farVal=-1; for(let i=0;i<n;i++){ if(minDist[i]>farVal){farVal=minDist[i]; farIdx=i;} }
+				centroids.push(data[farIdx]);
+			}
+			return centroids;
+		}
+		function kmeansLab(dataLab, k, { maxIter=100, tol=1e-4 } = {}) {
+			if (k===0 || dataLab.length<k) return { centroids:[], assignments:[] };
+			const seed = hashData(dataLab);
+			const rng = mulberry32(seed);
+			let centroids = farthestFirstInit(dataLab, k);
+			let assignments = new Array(dataLab.length).fill(0);
+			let inertiaPrev = Infinity;
+			for (let iter=0; iter<maxIter; iter++){
+				for(let i=0;i<dataLab.length;i++){
+					let minD=Infinity, minI=0;
+					for(let c=0;c<centroids.length;c++){
+						const d = sqDist3(dataLab[i], centroids[c]);
+						if (d<minD){ minD=d; minI=c; }
+					}
+					assignments[i]=minI;
+				}
+				const clusters = Array.from({length:k},()=>[]);
+				for(let i=0;i<dataLab.length;i++) clusters[assignments[i]].push(i);
+				for(let c=0;c<k;c++){
+					if (clusters[c].length===0){
+						let worstIdx=0, worstD=-1;
+						for(let i=0;i<dataLab.length;i++){
+							const d = sqDist3(dataLab[i], centroids[assignments[i]]);
+							if (d>worstD){ worstD=d; worstIdx=i; }
+						}
+						clusters[c]=[worstIdx]; assignments[worstIdx]=c;
+					}
+				}
+				let moved=0;
+				for(let c=0;c<k;c++){
+					const mean = weightedMean(clusters[c], dataLab);
+					if (mean){ moved += sqDist3(mean, centroids[c]); centroids[c]=mean; }
+				}
+				const inertia = computeInertia(assignments, centroids, dataLab);
+				const relGain = (inertiaPrev - inertia) / Math.max(1, inertiaPrev);
+				inertiaPrev = inertia;
+				if ((relGain>=0 && relGain<tol) || moved<1e-10) break;
+			}
+			const counts = new Array(k).fill(0); for(const a of assignments) counts[a]++;
+			const order = [...Array(k).keys()].sort((i,j)=>counts[j]-counts[i]);
+			const remap = new Array(k); order.forEach((cid,newIdx)=> remap[cid]=newIdx);
+			const centroidsSorted = order.map(idx=>centroids[idx]);
+			const assignmentsRemapped = assignments.map(a=>remap[a]);
+			return { centroids:centroidsSorted, assignments:assignmentsRemapped };
+		}
+
+		// --- 改进 Median Cut（在 Lab 空间按方差优先分裂） ---
+		function medianCutImprovedLab(pixelsRGB, k){
+			const spacePixels = pixelsRGB.map(rgbToLab);
+			const makeBox = (idxs)=>({ idxs, stats:null });
+			function computeStats(box){
+				const n=box.idxs.length; const mean=[0,0,0];
+				for(const i of box.idxs){ const p=spacePixels[i]; mean[0]+=p[0]; mean[1]+=p[1]; mean[2]+=p[2]; }
+				mean[0]/=n; mean[1]/=n; mean[2]/=n;
+				const v=[0,0,0]; for(const i of box.idxs){ const p=spacePixels[i]; v[0]+=(p[0]-mean[0])**2; v[1]+=(p[1]-mean[1])**2; v[2]+=(p[2]-mean[2])**2; }
+				v[0]/=n; v[1]/=n; v[2]/=n; const total=v[0]+v[1]+v[2];
+				return (box.stats={mean, varr:v, totalVar:total, n});
+			}
+			function boxScore(b){ const s=b.stats||computeStats(b); return s.n*s.totalVar; }
+			let boxes=[ makeBox([...spacePixels.keys()]) ]; computeStats(boxes[0]);
+			while(boxes.length<k){
+				boxes.sort((a,b)=>boxScore(b)-boxScore(a));
+				const box=boxes[0]; if ((box.stats?.n??0)<=1) break;
+				const v=box.stats.varr; let splitDim=0; if(v[1]>v[splitDim])splitDim=1; if(v[2]>v[splitDim])splitDim=2;
+				box.idxs.sort((i,j)=> spacePixels[i][splitDim]-spacePixels[j][splitDim]);
+				const mid=Math.floor(box.idxs.length/2);
+				const left=box.idxs.slice(0,mid), right=box.idxs.slice(mid);
+				if(!left.length || !right.length) break;
+				boxes.shift();
+				const b1=makeBox(left), b2=makeBox(right); computeStats(b1); computeStats(b2);
+				boxes.push(b1,b2);
+			}
+			//return boxes.map(b => b.stats.mean);
+
+            // 排序并重映射：按每个 box 的像素数量从大到小排序
+            const order = [...Array(boxes.length).keys()].sort((i, j) => boxes[j].stats.n - boxes[i].stats.n);
+            const remap = new Array(boxes.length);
+            order.forEach((oldIdx, newIdx) => remap[oldIdx] = newIdx);
+
+            // 返回排序后的聚类中心
+            const centroidsSorted = order.map(i => boxes[i].stats.mean);
+            const assignments = new Array(spacePixels.length);
+            for (let i = 0; i < boxes.length; i++) {
+                for (const idx of boxes[i].idxs) {
+                    assignments[idx] = remap[i];
+                }
+            }
+
+            return { centroids: centroidsSorted, assignments };
+
+		}
+
+		// --- 从算法生成色板 ---
+		function paletteByKMeansLab(pixelsRGB, k){
+			const labs = pixelsRGB.map(rgbToLab);
+			const { centroids, assignments } = kmeansLab(labs, Math.min(k, labs.length));
+			const counts = new Array(centroids.length).fill(0);
+			for(const a of assignments) counts[a]++;
+			const colors = centroids.map((lab, i) => {
+				const rgb = labToRgb(lab).map(Math.round);
+				return { rgb, hex: rgbToHex(rgb[0],rgb[1],rgb[2]), proportion: counts[i]/labs.length };
+			});
+			return { colors, labCentroids: centroids };
+		}
+		//Lab 空间是为了模拟人类视觉而设计的，它强调感知上的“均匀性”，但它并不是 RGB 的线性变换。Median Cut 是一个空间分裂算法，它依赖于颜色空间的几何结构。
+		// 在 RGB 空间中，颜色分布是图像真实的像素值。
+		// 在 Lab 空间中，颜色分布是“感知距离”，但空间结构被扭曲了。
+		// Median Cut 在 Lab 空间中分裂时，可能会过度强调某些暗色或饱和色区域，导致主色调被忽略。
+		function paletteByMedianCutLab(pixelsRGB, k) {
+			const { centroids, assignments } = medianCutImprovedLab(pixelsRGB, Math.min(k, pixelsRGB.length));
+
+			// 统计每个聚类的像素数量
+			const counts = new Array(centroids.length).fill(0);
+			for (const a of assignments) counts[a]++;
+
+			// 构建颜色对象（RGB、HEX、比例）
+			const colors = centroids.map((lab, i) => {
+				const rgb = labToRgb(lab).map(Math.round);
+				return {
+					rgb,
+					hex: rgbToHex(rgb[0], rgb[1], rgb[2]),
+					proportion: counts[i] / pixelsRGB.length
+				};
+			});
+
+			return { colors, labCentroids: centroids };
+		}
+
+		// --- 失真与分散度 ---
+		function distortionDeltaE(pixelsRGB, labs){
+			if (!labs || labs.length===0) return 0;
+			const pxLabs = pixelsRGB.map(rgbToLab);
+			let sum=0;
+			for(const p of pxLabs){
+				let best=Infinity;
+				for(const c of labs){ const d = deltaE76(p, c); if (d<best) best=d; }
+				sum += best;
+			}
+			return sum / pxLabs.length;
+		}
+		function paletteDiversity(labs){
+			if (!labs || labs.length<2) return 0;
+			let sum=0, cnt=0;
+			for(let i=0;i<labs.length;i++){
+				for(let j=i+1;j<labs.length;j++){
+					sum += deltaE76(labs[i], labs[j]); cnt++;
+				}
+			}
+			return sum / Math.max(1,cnt);
+		}
+
+		// --- 共通色板 ---
+		function buildCommonPalette(dominantColors, num=30){
+			if (!dominantColors || dominantColors.length===0) return [];
+			const data = dominantColors.map(c => c.rgb);
+			const labs = data.map(rgbToLab);
+			const k = Math.min(num, data.length);
+			const { centroids, assignments } = kmeansLab(labs, k);
+			const scores = new Array(k).fill(0);
+			assignments.forEach((a, idx) => { scores[a] += dominantColors[idx].proportion; });
+			return centroids.map((lab, i)=> {
+				const rgb = labToRgb(lab).map(Math.round);
+				return { rgb, hex: rgbToHex(rgb[0],rgb[1],rgb[2]), score: scores[i] };
+			}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+		}
+
+		// --- 统计报告 ---
+		function generateStatisticalReport(data){
+            const reportTarget = statisticalReportContainer.querySelector('#reportContent');
+			const colors = data.batchSummary.commonPalette;
+			if (!colors || colors.length===0){ reportTarget.innerHTML = '<p>无足够数据生成报告。</p>'; return; }
+			let html = '';
+			const temp={warm:0,cool:0};
+			const hsvs = colors.map(c=> ({...c, hsv: rgbToHsv(c.rgb[0],c.rgb[1],c.rgb[2])}));
+			hsvs.forEach(c=>{
+				const h=c.hsv.h;
+				if((h>=0&&h<75)||h>=330) temp.warm+=c.score; else if(h>=75&&h<255) temp.cool+=c.score;
+			});
+			const total=temp.warm+temp.cool; const warmPct= total>0?(temp.warm/total*100):50;
+			html += `<div class="analysis-section"><h4>色温分析</h4><div class="bar-chart"><div class="bar warm-bar" style="width:${warmPct.toFixed(1)}%">暖 ${warmPct.toFixed(0)}%</div><div class="bar cool-bar" style="width:${(100-warmPct).toFixed(1)}%">冷 ${(100-warmPct).toFixed(0)}%</div></div></div>`;
+			const sat={low:0,mid:0,high:0};
+			hsvs.forEach(c=>{ if(c.hsv.s<0.25) sat.low+=c.score; else if(c.hsv.s<0.7) sat.mid+=c.score; else sat.high+=c.score; });
+			const satSum = sat.low+sat.mid+sat.high;
+			html += `<div class="analysis-section"><h4>饱和度分析</h4><ul class="text-sm" style="padding-left:1rem;"><li>低饱和度: ${(satSum? sat.low/satSum*100:0).toFixed(1)}%</li><li>中等饱和度: ${(satSum? sat.mid/satSum*100:0).toFixed(1)}%</li><li>高饱和度: ${(satSum? sat.high/satSum*100:0).toFixed(1)}%</li></ul></div>`;
+			const vs = hsvs.map(c=>c.hsv.v); const contrast = Math.max(...vs)-Math.min(...vs);
+			let level='中'; if(contrast>0.7) level='高'; else if(contrast<0.3) level='低';
+			html += `<div class="analysis-section"><h4>对比度分析</h4><p class="text-sm">明度对比度级别: <strong>${level}</strong> (范围: ${contrast.toFixed(2)})</p></div>`;
+			const harmony = analyzeHarmony(hsvs);
+			let hhtml = `<div class="analysis-section"><h4>色彩和谐分析</h4>`;
+			if (harmony.name!=='无明显和谐关系'){
+				hhtml += `<p>检测到主要关系: <span class="harmony-badge harmony-${harmony.type}">${harmony.name}</span></p><p class="text-sm">${harmony.description}</p>`;
+			}else{
+				hhtml += `<p class="text-sm">${harmony.description}</p>`;
+			}
+			html += hhtml + `</div>`;
+			reportTarget.innerHTML = html;
+		}
+		function analyzeHarmony(colors){
+			const hues = colors.slice(0,5).map(c=>c.hsv.h);
+			const hueDiff = (a,b)=>{ let d=Math.abs(a-b); return d>180?360-d:d; };
+			let maxAnalogous=0;
+			for(let i=0;i<hues.length;i++){
+				let group=1; for(let j=0;j<hues.length;j++){ if(i===j) continue; if(hueDiff(hues[i],hues[j])<45) group++; }
+				if (group>maxAnalogous) maxAnalogous=group;
+			}
+			if (maxAnalogous>=3) return { name:'类似色', type:'analogous', description:'色轮相邻颜色为主，和谐统一。' };
+			for(let i=0;i<hues.length;i++){ for(let j=i+1;j<hues.length;j++){ const d=hueDiff(hues[i],hues[j]); if(d>150 && d<210) return { name:'互补色', type:'complementary', description:'存在对向色对，形成强对比与张力。' }; } }
+			const tri=(h)=>[(h+120)%360,(h+240)%360];
+			for(let i=0;i<hues.length;i++){ const t=tri(hues[i]); const p1=hues.some(h=>hueDiff(h,t[0])<30); const p2=hues.some(h=>hueDiff(h,t[1])<30); if(p1&&p2) return { name:'三色组', type:'triadic', description:'构成近等边三角形，丰富且平衡。' }; }
+			return { name:'无明显和谐关系', description:'色彩更自由或复杂，未匹配经典模式。' };
+		}
+
+		// --- 色轮绘制 ---
+		function drawColorWheel(colors, canvasId){
+			const canvas = document.getElementById(canvasId);
+			if (!canvas) return;
+			const rect = canvas.getBoundingClientRect();
+			canvas.width = rect.width; canvas.height = rect.height;
+			const ctx = canvas.getContext('2d');
+			const { width, height } = canvas;
+			const cx = width/2, cy = height/2;
+			const R = Math.min(cx,cy)*0.9;
+			ctx.clearRect(0,0,width,height);
+			for(let i=0;i<360;i++){
+				ctx.beginPath(); ctx.moveTo(cx,cy);
+				const a1=(i-90)*Math.PI/180, a2=(i+1-90)*Math.PI/180;
+				ctx.arc(cx,cy,R,a1,a2); ctx.closePath();
+				ctx.fillStyle=`hsl(${i},80%,60%)`; ctx.fill();
+			}
+			ctx.beginPath(); ctx.arc(cx,cy,R*0.2,0,2*Math.PI);
+			ctx.fillStyle='#f8fafc'; ctx.fill();
+			const sections=[15,45,75,165,255,330];
+			sections.forEach(a=>{ ctx.beginPath(); ctx.moveTo(cx,cy); const rad=(a-90)*Math.PI/180; ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad)); ctx.strokeStyle='rgba(0,0,0,.2)'; ctx.lineWidth=1; ctx.stroke(); });
+			const points = colors.map(c=>{
+				const hsv = rgbToHsv(c.rgb[0],c.rgb[1],c.rgb[2]);
+				return { x: cx + (R*0.2 + hsv.s*R*0.8)*Math.cos((hsv.h-90)*Math.PI/180), y: cy + (R*0.2 + hsv.s*R*0.8)*Math.sin((hsv.h-90)*Math.PI/180), size: Math.max(4, c.proportion*(width/7.5)), fill: c.hex };
+			});
+			points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,2*Math.PI); ctx.fillStyle=p.fill; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1.5; ctx.stroke(); });
+		}
+
+		// --- 色相分组 ---
+		function getHueCategory(hsv){ const {h,s,v}=hsv; if(s<0.1||v<0.15) return 'neutral'; if(h>=330||h<15) return 'red'; if(h<45) return 'orange'; if(h<75) return 'yellow'; if(h<165) return 'green'; if(h<255) return 'blue'; if(h<330) return 'violet'; return 'neutral'; }
+		function groupByHue(colors){
+			const groups = { red:[], orange:[], yellow:[], green:[], blue:[], violet:[] };
+			colors.forEach(c=>{ const cat=getHueCategory(rgbToHsv(c.rgb[0],c.rgb[1],c.rgb[2])); if(groups[cat]) groups[cat].push(c); });
+			return groups;
+		}
+		function labelOf(cat){ return {red:'红',orange:'橙',yellow:'黄',green:'绿',blue:'蓝',violet:'紫'}[cat] || cat; }
+	</script>
 </body>
 </html>
