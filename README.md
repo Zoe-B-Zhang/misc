@@ -1,4 +1,6 @@
 MISC items
+These projects are licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
 1. # 1_ImageTool - Image Batch Tool 
 
 A lightweight desktop application for batch processing images — perfect for preparing images for web publishing, portfolios, or content protection.
@@ -39,8 +41,7 @@ A lightweight desktop application for batch processing images — perfect for pr
 - Optional font: bundled if not using system default
 
 ---
-
-2. # 🎨 绘画色彩分析器简介
+2. # 🎨 Painting Color Analyer
 这是一个功能强大的网页版色彩分析工具，支持单张或批量处理画作，并提供深度定制的分析报告。无论您是专业设计师、艺术家还是色彩爱好者，都能通过它轻松解读画作的色彩语言。
 
 ---
@@ -54,7 +55,8 @@ A lightweight desktop application for batch processing images — perfect for pr
   - 选择取色算法：
     - **K-Means（默认）**：提取画面色彩的“平均值”，结果具有代表性。
     - **中位切分法**：提取画面中“实际存在”的颜色，结果更鲜艳。
-  - 忽略背景色：自动忽略占比最高且饱和度最低的颜色，聚焦核心色彩。
+    - 对主色明确、风格统一的图像，需要大的色彩关系，推荐kmeans算法。对色彩丰富、细节复杂的图像，需要发现色彩的多样性，推荐中位切分。省事用比较模式
+  - 选择比较模式，则会同时应用K-means和中位切法。
 - **开始分析**：点击“开始分析”按钮，等待处理完成。
 - **导出报告**：点击“导出分析报告”按钮，下载完整 JSON 数据报告。
 
@@ -68,29 +70,21 @@ A lightweight desktop application for batch processing images — perfect for pr
 #### 🖼 单张图片分析
 - **色彩堆栈图**：展示主色调的占比分布。
 - **详细信息**：每个主色显示 HEX 值、占比、HSL 值。
+- 应用色调 ： 点击可以将原图变成对应的单色图
 - **响应式色轮**：
   - 六色分区分类
   - 点的位置代表色相与饱和度，大小代表占比
   - 可视化颜色分布关系
-
+ - **黑白灰关系**
+ - 灰度图，明度九宫格，分布直方图
+ - 
 #### 📈 统计分析报告
 - **色彩比例**：总结各色系占比
 - **色温分析**：评估画作冷暖倾向
 - **饱和度分析**：判断色彩鲜艳度
 - **对比度分析**：分析明度与色相对比强度
 - **色彩和谐分析**：检测类似色、互补色、三色组等经典配色关系
-
----
-
-### 3. 背后原理
-
-- **取色原理**：使用 CIELAB 色彩空间进行聚类，更符合人眼感知。
-- **颜色分区**：采用六色分区逻辑，符合美术色彩理论。
-- **和谐分析**：
-  - 类似色：色相相邻
-  - 互补色：色相相差约 180°
-  - 三色组：色相构成等边三角形
-
+  
 ---
 
 © 2025 Bei Zhang — All Rights Reserved.
