@@ -727,7 +727,7 @@
             if(suggestions.length === 0) {
                 suggestions.push({ icon: '🎉', text: '各项指标均衡，黑白灰关系处理得当！' });
             }
-			return suggestions;
+			return [];
 		}
 
         function renderBWAnalysis(result, index) {
@@ -1135,4 +1135,17 @@
 		function labelOf(cat){ return {red:'红',orange:'橙',yellow:'黄',green:'绿',blue:'蓝',violet:'紫'}[cat] || cat; }
 	</script>
 </body>
+<footer style="text-align: center; font-size: 0.9em; margin-top: 2em;">
+	<p>
+	  © 2025 Bei Zhang 本网页遵循
+	  <a href="https://choosealicense.com/licenses/mit/" target="_blank">MIT 开源许可</a>。
+	  源码托管于 <a href="https://github.com/Zoe-B-Zhang/misc/tree/main/2_colorAnalyzer" target="_blank">GitHub</a>。
+	</p>
+	<p>
+		本项目遵循 
+		<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">
+		  CC BY-NC 4.0 非商业性许可协议
+		</a>。版权所有 © 2025 Bei Zhang
+	  </p>
+</footer>
 </html>
